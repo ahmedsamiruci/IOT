@@ -6,6 +6,9 @@ extern "C" {
 }
 #include "ESP8266TimerInterrupt.h"
 #include "ESP8266_ISR_Timer.h"
+#include "string.h"
+#include <ArduinoJson.h>
+
 #define LED_TOGGLE_INTERVAL_MS        2000L
 
 
@@ -18,13 +21,17 @@ typedef enum {
 } enu_blinkTimerMode;
 
 
+const int capacity = JSON_OBJECT_SIZE(3); 
+
 WiFiClient client;
 ESP8266Timer ITimer;
 ESP8266_ISR_Timer ISR_Timer;
 volatile uint32_t blinkyTimerId;
+volatile uint32_t dataTimerId;
 volatile uint32_t blinkCount = 0;
 volatile enu_blinkTimerMode blinkMode = BLINKY_MODE_UNDEF;
 volatile bool bRetryConn = false;
+volatile bool bSendData = false;
 
 volatile uint32_t startMillis = 0;
 
@@ -163,6 +170,10 @@ void setup() {
  
 }
 
+void dataTimerCb(void)
+{
+  bSendData = true;
+}
 
 unsigned int readSensor() {
   int sensorVal = 0;
@@ -193,6 +204,8 @@ bool connectToServer(void) {
       //stop the timer
       stopBlinkyTimer();
       digitalWrite(initLED, LOW);
+      
+      dataTimerId = ISR_Timer.setInterval(250, dataTimerCb);
       return true;
     }
   }
@@ -242,5 +255,19 @@ void loop() {
   {
     bRetryConn = false;
     connectToServer();
+  }
+
+
+  if(bSendData)
+  {
+    bSendData = false;
+    StaticJsonDocument<capacity> doc;
+
+    doc["time"] = millis();
+    doc["val"] = readSensor();
+
+    String output;
+    serializeJsonPretty(doc, output);
+    Serial.println(output);
   }
 }

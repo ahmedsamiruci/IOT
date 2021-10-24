@@ -33,6 +33,6 @@ const uint16_t hostTcpPort = 10000;
 
 #define HW_TIMER_INTERVAL_US      10000L
 
-//#define MOCK_SENSOR
+#define MOCK_SENSOR
 
 #endif
