@@ -26,7 +26,7 @@ while True:
             data = connection.recv(16)
             print('received {0}'.format(data))
             if data:
-                continue;
+                #continue;
                 print('sending data back to the client')
                 connection.sendall(data)
             else:

@@ -141,35 +141,6 @@ void tryConnectionCb() {
   bRetryConn = true;
 }
 
-void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(115200);
-  while (!Serial);
-  delay(100);
-
-  Serial.printf("SDK version: %s \n", system_get_sdk_version());
-
-  // Setup pins
-  // Setup LED pins
-  pinMode(redLED, OUTPUT);
-  digitalWrite(redLED, LOW);
-
-  pinMode(greenLED, OUTPUT);
-  digitalWrite(greenLED, LOW);
-
-  pinMode(blueLED, OUTPUT);
-  digitalWrite(blueLED, LOW);
-
-  initTimers();
-
-  Serial.println("Initialization Complete\n");
-
-  setupWiFi();
-
-  connectToServer();
-
-}
-
 void dataTimerCb(void)
 {
   bSendData = true;
@@ -203,7 +174,7 @@ bool connectToServer(void) {
       Serial.printf("Connected to Server {local port: %d}\n", client.localPort());
       //stop the timer
       stopBlinkyTimer();
-      digitalWrite(initLED, LOW);
+      digitalWrite(initLED, HIGH);
 
       dataTimerId = ISR_Timer.setInterval(dataTimerInt, dataTimerCb);
       return true;
@@ -211,42 +182,6 @@ bool connectToServer(void) {
   }
 }
 
-void sendTcpData(void)
-{
-
-  /*
-    // This will send the request to the server
-    client.println("hello from ESP8266");
-
-    Serial.printf("Connection status: %d\n", client.connected());
-
-    //read back one line from server
-    Serial.println("receiving from remote server");
-    //String line = client.readStringUntil('!');
-    //Serial.println(line);
-
-    //Serial.println("closing connection");
-    //client.stop();
-
-    //Serial.println("wait 5 sec...");
-    //delay(5000);
-
-    while (client.available() == 0);
-
-    Serial.println("Data Received...");
-
-    while (client.available()) {
-      char ch = static_cast<char>(client.read());
-      Serial.print(ch);
-    }
-
-    Serial.println();
-
-    Serial.println("wait 5 sec...");
-    delay(5000);
-
-  */
-}
 
 void sendDataToServer() {
   if ( client.connected() ) {
@@ -261,13 +196,41 @@ void sendDataToServer() {
     //Print over serial
     serializeJsonPretty(doc, Serial);
     Serial.println();
-    
+
     // send data over tcp
     serializeJsonPretty(doc, client);
   }
-  else{
+  else {
     Serial.println("TCP disconencted!");
   }
+}
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+  while (!Serial);
+  delay(100);
+
+  Serial.printf("SDK version: %s \n", system_get_sdk_version());
+
+  // Setup pins
+  // Setup LED pins
+  pinMode(redLED, OUTPUT);
+  digitalWrite(redLED, LOW);
+
+  pinMode(greenLED, OUTPUT);
+  digitalWrite(greenLED, LOW);
+
+  pinMode(blueLED, OUTPUT);
+  digitalWrite(blueLED, LOW);
+
+  initTimers();
+
+  Serial.println("Initialization Complete\n");
+
+  setupWiFi();
+
+  connectToServer();
 }
 
 void loop() {
@@ -278,10 +241,23 @@ void loop() {
     connectToServer();
   }
 
-
   if (bSendData)
   {
     bSendData = false;
     sendDataToServer();
   }
+
+  // from the server, read them and print them:
+  if (client.available()) {
+    
+    Serial.printf("Data is Available = %d\n", client.available());
+
+    while (client.available()) {
+
+      char c = client.read();
+
+      Serial.write(c);
+    }
+  }
+
 }
