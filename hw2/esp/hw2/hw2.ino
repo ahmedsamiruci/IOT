@@ -21,7 +21,7 @@ typedef enum {
 } enu_blinkTimerMode;
 
 
-const int capacity = JSON_OBJECT_SIZE(3); 
+const int capacity = JSON_OBJECT_SIZE(3);
 
 WiFiClient client;
 ESP8266Timer ITimer;
@@ -137,7 +137,7 @@ void initTimers(void) {
 }
 
 
-void tryConnectionCb(){
+void tryConnectionCb() {
   bRetryConn = true;
 }
 
@@ -167,7 +167,7 @@ void setup() {
   setupWiFi();
 
   connectToServer();
- 
+
 }
 
 void dataTimerCb(void)
@@ -204,8 +204,8 @@ bool connectToServer(void) {
       //stop the timer
       stopBlinkyTimer();
       digitalWrite(initLED, LOW);
-      
-      dataTimerId = ISR_Timer.setInterval(250, dataTimerCb);
+
+      dataTimerId = ISR_Timer.setInterval(dataTimerInt, dataTimerCb);
       return true;
     }
   }
@@ -248,26 +248,40 @@ void sendTcpData(void)
   */
 }
 
+void sendDataToServer() {
+  if ( client.connected() ) {
+    // Construct the sensor data as a JSON object
+    StaticJsonDocument<capacity> doc;
+
+    doc["time"] = millis();
+    doc["val"] = readSensor();
+
+
+    Serial.println("JSON Output:");
+    //Print over serial
+    serializeJsonPretty(doc, Serial);
+    Serial.println();
+    
+    // send data over tcp
+    serializeJsonPretty(doc, client);
+  }
+  else{
+    Serial.println("TCP disconencted!");
+  }
+}
 
 void loop() {
   // put your main code here, to run repeatedly:
-  if(bRetryConn)
+  if (bRetryConn)
   {
     bRetryConn = false;
     connectToServer();
   }
 
 
-  if(bSendData)
+  if (bSendData)
   {
     bSendData = false;
-    StaticJsonDocument<capacity> doc;
-
-    doc["time"] = millis();
-    doc["val"] = readSensor();
-
-    String output;
-    serializeJsonPretty(doc, output);
-    Serial.println(output);
+    sendDataToServer();
   }
 }

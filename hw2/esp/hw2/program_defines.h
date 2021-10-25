@@ -13,7 +13,7 @@ const uint8 initLED = redLED;
 
 static const int readingIntMS = 200;           // Sensor reading interval (milliseconds)
 static const int calibrationIntMS = 3000;       // time needed for calibration
-static const int readTimeMS = 2000;      
+static const int dataTimerInt = 5000;      
 static const int blinkingTimerMS = 250;
 static const int blinkingWindowMS = 250;  
 
