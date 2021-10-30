@@ -4,9 +4,12 @@ import sys
 import json
 from threading import Thread, Event
 from time import sleep
+import random
 
 sock = None
 connection = None
+evt = Event()
+valList = []
 
 def cleanup():
     global sock
@@ -45,13 +48,14 @@ def tcpThread():
                 data = connection.recv(512).decode()
                 print('data received, with type {0}, data={1}'.format(type(data), data))
 
-                dataObj = json.loads(data)
-                print("Json data {0}".format(dataObj))
-
                 if data:
-                    #continue;
-                    print('sending data back to the client')
-                    connection.send(data.encode())
+                    print('handle recieved data')
+                    dataObj = json.loads(data)
+                    valList.append(dataObj)
+                    #signal AppThread
+                    print("signal AppThread")
+                    evt.set()
+                    #connection.send(data.encode())
                 else:
                     print('no more data from {0}'.format(client_address))
                     break
@@ -62,6 +66,8 @@ def tcpThread():
             print("error happened to the connection, exit the connection")
             # Clean up the connection
             connection.close()
+            #clear the values list
+            valList.clear()
 
 
 def threadWrapper(tcpThread):
@@ -77,27 +83,83 @@ def threadWrapper(tcpThread):
     return wrapper()
     
 
-def AppDispatch():
-
-    print("App Dispatch Started\n")
+def readSensor():
+    # ToDO: read the actual value of the sensor
+    return {"Pi_Val" : random.randint(2,500)}
+ 
+def calcAvg():
+    avg_reading = {'ESP': 0, 'Pi': 0}
     
-    while True:
+    for dic in valList:
+        avg_reading['ESP'] += dic['ESP_Val']
+        avg_reading['Pi'] += dic["Pi_Val"]
 
-        try:
-            print("AppDispatch")
-            sleep(5)
-        except KeyboardInterrupt:
-            global sock
-            global connection
-            print('receive keyboard interrupt, terminate the program')
-            cleanup()
+    avg_reading['ESP'] /= 8
+    avg_reading['Pi'] /= 8
+
+    return avg_reading
+
+def UpdateLed(avg_reading):
+    #ToDO: include the actual LED on PI
+    ledStatus = {'ESP_LED':0, 'Pi_LED':0}
+    if avg_reading['ESP'] >= avg_reading['Pi']:
+        print('Turn on the ESP LED')
+        ledStatus['ESP_LED'] = 1
+    else:
+        print('Turn on Pi LED')
+        ledStatus['Pi_LED'] = 1
+
+    return ledStatus
+
+def sendData(dictObj):
+    global connection
+    # Convert the dictonary to string
+    msgStr = json.dumps(dictObj)
+    print('Send to Client: {0}'.format(msgStr))
+    #Send Data to Connected socket
+    connection.send(msgStr.encode())
+
+
+def AppThread():
+
+    print("App Thread Started\n")
+    
+    def AppDispatch():
+        while True:
+            evt.wait()
+            print('AppThread Signalled')
+            valList[-1].update(readSensor())
+            print('update item in the list= {0}, list len {1}'.format(valList[-1], len(valList)))
+
+            #Check if the list has 8 pairs (2 seconds window)
+            if len(valList) == 8:
+                #calculate the average for both ESP and Pi
+                avg_reading = calcAvg()
+                print("[ESP Avg = {0}] while [Pi Avg = {1}]".format(avg_reading['ESP'], avg_reading['Pi']))
+                #clear the list
+                valList.clear()
+                
+                #Apply Led and get the LED Value
+                ledStatus = UpdateLed(avg_reading)
+
+                #Send the value to ESP
+                sendData(ledStatus)
+
+            evt.clear()
+
+        
+    try:
+        AppDispatch()
+    except KeyboardInterrupt:
+        print('receive keyboard interrupt, terminate the program')
+        cleanup()
 
 
 def mainProgram():
 
     try:
         tcpThreadObj = Thread(target=threadWrapper, args=(tcpThread,))
-        AppThreadObj = Thread(target=AppDispatch)
+        AppThreadObj = Thread(target=AppThread)
 
         AppThreadObj.start()
         tcpThreadObj.start()
