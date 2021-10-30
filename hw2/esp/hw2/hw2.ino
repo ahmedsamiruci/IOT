@@ -231,6 +231,16 @@ void setup() {
   setupWiFi();
 
   connectToServer();
+
+StaticJsonDocument<capacity> doc;
+
+    doc["time"] = millis();
+    doc["val"] = readSensor();
+
+
+    Serial.println("JSON Output:");
+    //Print over serial
+    serializeJsonPretty(doc, Serial);
 }
 
 void loop() {
