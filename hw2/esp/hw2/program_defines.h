@@ -13,7 +13,7 @@ const uint8 initLED = redLED;
 
 static const int readingIntMS = 200;           // Sensor reading interval (milliseconds)
 static const int calibrationIntMS = 3000;       // time needed for calibration
-static const int dataTimerInt = 5000;      
+static const int dataTimerInt = 1000;      
 static const int blinkingTimerMS = 250;
 static const int blinkingWindowMS = 250;  
 
@@ -28,7 +28,7 @@ static const int lightDebounce = 30;
 const char* ssid = "Ahmed Google";
 const char* pswd = "P@ssw0rd01062602900";
 
-const char* hostIP = "192.168.86.99";
+const char* hostIP = "192.168.86.122";
 const uint16_t hostTcpPort = 10000;
 
 #define HW_TIMER_INTERVAL_US      10000L

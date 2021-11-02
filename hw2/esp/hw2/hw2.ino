@@ -143,6 +143,7 @@ void tryConnectionCb() {
 
 void dataTimerCb(void)
 {
+  Serial.printf("dataTimerCb\n");
   bSendData = true;
 }
 
@@ -188,8 +189,7 @@ void sendDataToServer() {
     // Construct the sensor data as a JSON object
     StaticJsonDocument<capacity> doc;
 
-    doc["time"] = millis();
-    doc["val"] = readSensor();
+    doc["ESP_Val"] = readSensor();
 
 
     Serial.println("JSON Output:");
@@ -199,9 +199,15 @@ void sendDataToServer() {
 
     // send data over tcp
     serializeJsonPretty(doc, client);
+    
+    //String str = "{\r\n  \"ESP_Val\": 151\r\n}";
+    //client.println(str);
+    
   }
   else {
-    Serial.println("TCP disconencted!");
+    Serial.println("TCP disconencted!, wait 5 sec then conn");
+    ISR_Timer.setTimeout(5000, tryConnectionCb);
+    startBlinkyTimer(BLINKY_MODE_INFINITY, 0);
   }
 }
 
@@ -231,16 +237,6 @@ void setup() {
   setupWiFi();
 
   connectToServer();
-
-StaticJsonDocument<capacity> doc;
-
-    doc["time"] = millis();
-    doc["val"] = readSensor();
-
-
-    Serial.println("JSON Output:");
-    //Print over serial
-    serializeJsonPretty(doc, Serial);
 }
 
 void loop() {

@@ -5,6 +5,7 @@ import json
 from threading import Thread, Event
 from time import sleep
 import random
+import re
 
 sock = None
 connection = None
@@ -19,6 +20,36 @@ def cleanup():
     sock.close()
     sys.exit()
 
+
+def handleRxData(MSG):
+    print('handleRxData:-> {0}'.format(MSG))
+    #Check if there are multiple records in the message
+    #Split the records in a list
+    MSG = re.sub(r'(}{)', r'}@{', MSG)
+    records = MSG.split('@')
+
+    for idx, rec in enumerate(records):
+        #delete the invalid rows row
+        if rec[-1] != '}':
+            del records[idx]
+        # valid record
+        else: 
+            dataObj = json.loads(rec)
+            valList.append(dataObj)
+
+    #signal AppThread
+    #print("signal AppThread")
+    evt.set()
+
+    return True
+
+def isRecord(MSG):
+    if 0 < MSG.find('}'):
+        return True
+    else:
+        return False
+
+
 def tcpThread():
     print("TCP Thread start successfully")
     global sock
@@ -32,42 +63,51 @@ def tcpThread():
     # Listen for incoming connections
     sock.listen(1)
 
-    while True:
-        global connection
-        # Wait for a connection
-        print('waiting for a connection')
-        connection, client_address = sock.accept()
-        
-        #Set timeout for socket operations
-        connection.settimeout(5)
-        print('tcp is alive')
-        try:
+    try:
+
+        while True:
+            global connection
+            # Wait for a connection
+            print('waiting for a connection')
+            connection, client_address = sock.accept()
+            
+            #Set timeout for socket operations
+            connection.settimeout(5)
+            print('tcp is alive')
+
             print('connection from: {0}'.format(client_address))
             # Wait for data from the client
+            totalData = b''
             while True:
-                data = connection.recv(512).decode()
-                print('data received, with type {0}, data={1}'.format(type(data), data))
-
-                if data:
-                    print('handle recieved data')
-                    dataObj = json.loads(data)
-                    valList.append(dataObj)
-                    #signal AppThread
-                    print("signal AppThread")
-                    evt.set()
-                    #connection.send(data.encode())
-                else:
-                    print('no more data from {0}'.format(client_address))
+                data = connection.recv(512)
+                if data == b'':
+                    print("connection dropped")
+                    #sock.shutdown(socket.SHUT_RDWR)
                     break
-        except KeyboardInterrupt:
-            print('receive keyboard interrupt, terminate the program')
-            cleanup()      
-        finally:
-            print("error happened to the connection, exit the connection")
-            # Clean up the connection
-            connection.close()
-            #clear the values list
-            valList.clear()
+
+
+                #print('data received, with type {0}, data={1}'.format(type(data), data))
+                totalData = totalData + data
+
+
+                #print('TotalData, with type {0}, data={1}'.format(type(totalData), totalData))
+                if isRecord(totalData.decode('utf-8')):
+                    handleRxData(totalData.decode('utf-8'))
+                    #clear total data
+                    totalData = b''
+                else:
+                    print('wait for more data from {0}'.format(client_address))
+                    
+    except KeyboardInterrupt:
+        print('receive keyboard interrupt, terminate the program')
+        cleanup()      
+    finally:
+        print("error happened to the connection, exit the connection")
+        print("Oops!", sys.exc_info()[0], "occurred.")
+        # Clean up the connection
+        connection.close()
+        #clear the values list
+        valList.clear()
 
 
 def threadWrapper(tcpThread):
@@ -128,8 +168,10 @@ def AppThread():
         while True:
             evt.wait()
             print('AppThread Signalled')
-            valList[-1].update(readSensor())
-            print('update item in the list= {0}, list len {1}'.format(valList[-1], len(valList)))
+            for dic in valList:
+                if not 'Pi_Val' in dic:
+                    dic.update(readSensor())
+                    print('update item in the list= {0}, list len {1}'.format(dic, len(valList)))
 
             #Check if the list has 8 pairs (2 seconds window)
             if len(valList) == 8:
