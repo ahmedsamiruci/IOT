@@ -122,10 +122,15 @@ def threadWrapper(tcpThread):
 
     return wrapper()
     
+testModeEnabled = True
 
 def readSensor():
-    # ToDO: read the actual value of the sensor
-    return {"Pi_Val" : random.randint(2,500)}
+
+    if testModeEnabled:
+        return {"Pi_Val" : random.randint(0,200)}
+    else:
+        # ToDO: read the actual value of the sensor
+        return {"Pi_Val" : random.randint(0,200)}
  
 def calcAvg():
     avg_reading = {'ESP': 0, 'Pi': 0}

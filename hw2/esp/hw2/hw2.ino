@@ -34,6 +34,7 @@ volatile bool bRetryConn = false;
 volatile bool bSendData = false;
 
 volatile uint32_t startMillis = 0;
+volatile uint32_t connectMillis = 0;
 
 void IRAM_ATTR TimerHandler()
 {
@@ -176,8 +177,8 @@ bool connectToServer(void) {
       //stop the timer
       stopBlinkyTimer();
       digitalWrite(initLED, HIGH);
-
       dataTimerId = ISR_Timer.setInterval(dataTimerInt, dataTimerCb);
+      connectMillis = millis();
       return true;
     }
   }
@@ -205,10 +206,34 @@ void sendDataToServer() {
     
   }
   else {
-    Serial.println("TCP disconencted!, wait 5 sec then conn");
-    ISR_Timer.setTimeout(5000, tryConnectionCb);
-    startBlinkyTimer(BLINKY_MODE_INFINITY, 0);
+    //Serial.println("TCP disconencted!!!, wait 5 sec then conn");
+    connectMillis = 0;
+    ISR_Timer.disable(dataTimerId);
+    /*ISR_Timer.setTimeout(5000, tryConnectionCb);
+    startBlinkyTimer(BLINKY_MODE_INFINITY, 0);*/
   }
+}
+
+void handleRxData(String msg){
+  StaticJsonDocument<capacity> doc;
+
+  DeserializationError error = deserializeJson(doc, msg);
+
+    // Test if parsing succeeds.
+  if (error) {
+    Serial.print(F("deserializeJson() failed: "));
+    Serial.println(error.f_str());
+    return;
+  }
+   // Fetch values.
+  int ESP_LED = doc["ESP_LED"];
+  int Pi_LED = doc["Pi_LED"];
+   
+  Serial.println("Received LEDs; ESP LED: " + String(ESP_LED) + " ; Pi LED: " + String(Pi_LED) + "\n");
+
+  //Apply LED pattern
+  digitalWrite(piLED, Pi_LED == 1? HIGH:LOW );
+  digitalWrite(espLED, ESP_LED == 1? HIGH:LOW );
 }
 
 void setup() {
@@ -221,17 +246,19 @@ void setup() {
 
   // Setup pins
   // Setup LED pins
-  pinMode(redLED, OUTPUT);
-  digitalWrite(redLED, LOW);
+  pinMode(initLED, OUTPUT);
+  digitalWrite(initLED, LOW);
 
-  pinMode(greenLED, OUTPUT);
-  digitalWrite(greenLED, LOW);
+  pinMode(piLED, OUTPUT);
+  digitalWrite(piLED, LOW);
 
-  pinMode(blueLED, OUTPUT);
-  digitalWrite(blueLED, LOW);
+  pinMode(espLED, OUTPUT);
+  digitalWrite(espLED, LOW);
 
   initTimers();
 
+  client.setNoDelay(true);
+  
   Serial.println("Initialization Complete\n");
 
   setupWiFi();
@@ -257,12 +284,30 @@ void loop() {
   if (client.available()) {
     
     Serial.printf("Data is Available = %d\n", client.available());
+    String incomingData;
 
     while (client.available()) {
+     // char c = client.read();
+      incomingData += (char) client.read();
+      
+    }
+    Serial.println("Recieve String " + incomingData + "\n");
+    
+    handleRxData( incomingData );
+    
+  }
 
-      char c = client.read();
-
-      Serial.write(c);
+  // check the total connection time
+  if ( client.connected() && (connectMillis > 0)) {
+    // check the total connection time to initiate disconnection
+    if( (millis() - connectMillis) >= disconnectTimeoutMS) {
+      Serial.printf("Disconnection timeout after %d mins, disconnecting...\n", (disconnectTimeoutMS/1000/60));
+      client.stop();
+      connectMillis = 0;
+      //turn off all LEDs
+      digitalWrite(initLED, LOW);
+      digitalWrite(piLED, LOW);
+      digitalWrite(espLED, LOW);
     }
   }
 

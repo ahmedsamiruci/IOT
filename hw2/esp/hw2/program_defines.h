@@ -3,21 +3,25 @@
 #define __PROG_DEFINES__
 
 
-const uint8 redLED = D1;
-const uint8 greenLED = D2;
-const uint8 blueLED = D3;
-const uint8 photoSensor = A0;                 // Photo Sensor has to be connected to analog pin
-const uint8 pushBtn = D6;
+const uint8_t redLED = D1;
+const uint8_t greenLED = D2;
+const uint8_t blueLED = D3;
+const uint8_t photoSensor = A0;                 // Photo Sensor has to be connected to analog pin
+const uint8_t pushBtn = D6;
 
-const uint8 initLED = redLED;
+const uint8_t initLED = redLED;
+const uint8_t espLED = blueLED;
+const uint8_t piLED = greenLED;
 
-static const int readingIntMS = 200;           // Sensor reading interval (milliseconds)
-static const int calibrationIntMS = 3000;       // time needed for calibration
-static const int dataTimerInt = 1000;      
-static const int blinkingTimerMS = 250;
-static const int blinkingWindowMS = 250;  
+static const uint32_t readingIntMS = 200;           // Sensor reading interval (milliseconds)
+static const uint32_t calibrationIntMS = 3000;       // time needed for calibration
+static const uint32_t dataTimerInt = 1000;      
+static const uint32_t blinkingTimerMS = 2000;
+static const uint32_t blinkingWindowMS = 250;  
+static const uint32_t disconnectTimeoutMS = 1 * 60 * 1000;
 
-static const int lightDebounce = 30;
+
+static const uint8_t lightDebounce = 30;
 
 #define switched                            true // value if the button switch has been pressed
 #define triggered                           true // controls interrupt handler
