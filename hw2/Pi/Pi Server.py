@@ -3,14 +3,23 @@ import socket
 import sys
 import json
 from threading import Thread, Event
-from time import sleep
+#from time import sleep
+import time
 import random
 import re
+import RPi.GPIO as GPIO
+import board
+import pwmio
 
 sock = None
 connection = None
 evt = Event()
 valList = []
+ledPins = {"red":13, "green": 19, "blue":26}
+rPWM = None
+gPWM = None
+bPWM = None
+
 
 def cleanup():
     global sock
@@ -49,6 +58,14 @@ def isRecord(MSG):
     else:
         return False
 
+def get_ip_address():
+ ip_address = '';
+ s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+ s.connect(("8.8.8.8",80))
+ ip_address = s.getsockname()[0]
+ s.close()
+ return ip_address
+
 
 def tcpThread():
     print("TCP Thread start successfully")
@@ -56,7 +73,7 @@ def tcpThread():
     # Create a TCP/IP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # Bind the socket to the port
-    server_address = (socket.gethostbyname(socket.gethostname()), 10000)
+    server_address = (get_ip_address(), 10000)
     print('starting up server on {0} port {1}'.format(server_address, 10000))
     sock.bind(server_address)
 
@@ -76,9 +93,21 @@ def tcpThread():
             print('tcp is alive')
 
             print('connection from: {0}'.format(client_address))
+            
+            changeLeds(rPWM, 'slow2')
+            #get connection time
+            tic = time.perf_counter()
+            timerRun = True
+            
             # Wait for data from the client
             totalData = b''
             while True:
+                toc = time.perf_counter()
+                if timerRun and ((toc - tic) >= 2):
+                    print("Time elapsed = {0} seconds, Turn ON LED".format(toc-tic))
+                    timerRun = False                    
+                    changeLeds(rPWM, 'on')
+                    
                 data = connection.recv(512)
                 if data == b'':
                     print("connection dropped")
@@ -108,6 +137,10 @@ def tcpThread():
         connection.close()
         #clear the values list
         valList.clear()
+        #turn off leds
+        changeLeds(rPWM, 'slow1')
+        changeLeds(bPWM, 'off')
+        changeLeds(gPWM, 'off')
 
 
 def threadWrapper(tcpThread):
@@ -150,9 +183,13 @@ def UpdateLed(avg_reading):
     if avg_reading['ESP'] >= avg_reading['Pi']:
         print('Turn on the ESP LED')
         ledStatus['ESP_LED'] = 1
+        changeLeds(bPWM, 'on')
+        changeLeds(gPWM, 'off')
     else:
         print('Turn on Pi LED')
         ledStatus['Pi_LED'] = 1
+        changeLeds(bPWM, 'off')
+        changeLeds(gPWM, 'on')
 
     return ledStatus
 
@@ -202,8 +239,55 @@ def AppThread():
         cleanup()
 
 
+def changeLeds(LED, status):
+    
+    if status == 'on':
+        LED.duty_cycle = 1000
+        LED.frequency = 1000
+    elif status == 'off':
+        LED.duty_cycle = 0
+    elif status == 'slow1':
+        LED.duty_cycle = 1000
+        LED.frequency = 1
+    elif status == 'slow2':
+        LED.duty_cycle = 1000
+        LED.frequency = 4
+    
+       
+
+def configLeds():
+    global rPWM
+    global bPWM
+    global gPWM
+    
+    #GPIO.setmode(GPIO.BCM)
+    
+    greenLed = 19 #board.D19
+    redLed = 13 #board.D13
+    blueLed = 26 #board.D26
+    
+    #GPIO.setup(ledPins['green'], GPIO.OUT)
+    #GPIO.setup(ledPins['blue'], GPIO.OUT)
+    
+    rPWM = pwmio.PWMOut(board.D13, duty_cycle=0, frequency = 100)
+    gPWM = pwmio.PWMOut(board.D19, duty_cycle=0, frequency = 100)
+    bPWM = pwmio.PWMOut(board.D26, duty_cycle=0, frequency = 100)
+    
+    #print("Turn On All Leds")
+    
+    #Turn On All Leds
+    changeLeds(rPWM, 'slow1')
+    changeLeds(gPWM, 'off')
+    changeLeds(bPWM, 'off')
+
+    
+    
 def mainProgram():
 
+    #Configure GPIOs For LEDs
+    configLeds()
+    
+    
     try:
         tcpThreadObj = Thread(target=threadWrapper, args=(tcpThread,))
         AppThreadObj = Thread(target=AppThread)
