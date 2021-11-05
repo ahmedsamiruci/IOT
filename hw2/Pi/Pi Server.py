@@ -1,3 +1,5 @@
+#!/user/bin/env python
+
 from os import error
 import socket
 import sys
@@ -10,7 +12,13 @@ import re
 import RPi.GPIO as GPIO
 import board
 import pwmio
+import serial
 
+
+testModeEnabled = False
+
+ser = None
+espPin = 23
 sock = None
 connection = None
 evt = Event()
@@ -89,7 +97,7 @@ def tcpThread():
             connection, client_address = sock.accept()
             
             #Set timeout for socket operations
-            connection.settimeout(5)
+            connection.settimeout(10)
             print('tcp is alive')
 
             print('connection from: {0}'.format(client_address))
@@ -149,21 +157,33 @@ def threadWrapper(tcpThread):
             try:
                 tcpThread()
             except BaseException as e:
-                print('{!r}; restarting thread'.format(e))
+                print('{!r}; wait for 5 sec then restarting thread'.format(e))
+                time.sleep(5)
             else:
                 print('exited normally!!!!')
 
     return wrapper()
-    
-testModeEnabled = True
+
 
 def readSensor():
 
     if testModeEnabled:
         return {"Pi_Val" : random.randint(0,200)}
     else:
-        # ToDO: read the actual value of the sensor
-        return {"Pi_Val" : random.randint(0,200)}
+        tic = time.perf_counter()
+        # Raise the ESP Interrupt pin
+        #print("----> raise pin\n")
+        GPIO.output(espPin, GPIO.HIGH)
+        
+        while True:
+            data = ser.readline().decode('utf-8')
+            print("ESP Rspn: {0}\n".format(data))
+            GPIO.output(espPin, GPIO.LOW)
+            if data.startswith("val="):
+                #print("Val= {0}\n".format(int(data.split("val=")[1])))
+                toc = time.perf_counter()
+                print("ESP time taken = {0}".format(toc-tic))
+                return {"Pi_Val" : int(data.split("val=")[1])}
  
 def calcAvg():
     avg_reading = {'ESP': 0, 'Pi': 0}
@@ -180,7 +200,7 @@ def calcAvg():
 def UpdateLed(avg_reading):
     #ToDO: include the actual LED on PI
     ledStatus = {'ESP_LED':0, 'Pi_LED':0}
-    if avg_reading['ESP'] >= avg_reading['Pi']:
+    if avg_reading['ESP'] <= avg_reading['Pi']:
         print('Turn on the ESP LED')
         ledStatus['ESP_LED'] = 1
         changeLeds(bPWM, 'on')
@@ -216,7 +236,7 @@ def AppThread():
                     print('update item in the list= {0}, list len {1}'.format(dic, len(valList)))
 
             #Check if the list has 8 pairs (2 seconds window)
-            if len(valList) == 8:
+            if len(valList) >= 8:
                 #calculate the average for both ESP and Pi
                 avg_reading = calcAvg()
                 print("[ESP Avg = {0}] while [Pi Avg = {1}]".format(avg_reading['ESP'], avg_reading['Pi']))
@@ -280,13 +300,29 @@ def configLeds():
     changeLeds(gPWM, 'off')
     changeLeds(bPWM, 'off')
 
+
+def configESP82Comm():
+    global ser
+    ser = serial.Serial(
+        port='/dev/ttyS0', 
+        baudrate = 921600,
+        parity=serial.PARITY_NONE,
+        stopbits=serial.STOPBITS_ONE,
+        bytesize=serial.EIGHTBITS,
+        timeout=1
+        )
+    
+    GPIO.setup(espPin, GPIO.OUT)
+    GPIO.output(espPin, GPIO.LOW)
     
     
 def mainProgram():
-
+    
     #Configure GPIOs For LEDs
     configLeds()
     
+    #Configure communication with ESP8266 to get sensor readings
+    configESP82Comm()
     
     try:
         tcpThreadObj = Thread(target=threadWrapper, args=(tcpThread,))
