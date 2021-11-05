@@ -40,7 +40,7 @@ def cleanup():
 
 
 def handleRxData(MSG):
-    print('handleRxData:-> {0}'.format(MSG))
+    #print('handleRxData:-> {0}'.format(MSG))
     #Check if there are multiple records in the message
     #Split the records in a list
     MSG = re.sub(r'(}{)', r'}@{', MSG)
@@ -113,7 +113,7 @@ def tcpThread():
             while True:
                 toc = time.perf_counter()
                 if timerRun and ((toc - tic) >= 2):
-                    print("Time elapsed = {0} seconds, Turn ON LED".format(toc-tic))
+                    #print("Time elapsed = {0} seconds, Turn ON LED".format(toc-tic))
                     timerRun = False                    
                     changeLeds(rPWM, 'on')
                     
@@ -133,8 +133,8 @@ def tcpThread():
                     handleRxData(totalData.decode('utf-8'))
                     #clear total data
                     totalData = b''
-                else:
-                    print('wait for more data from {0}'.format(client_address))
+                #else:
+                    #print('wait for more data from {0}'.format(client_address))
                     
     except KeyboardInterrupt:
         print('receive keyboard interrupt, terminate the program')
@@ -189,11 +189,11 @@ def EspThread(lock):
         GPIO.output(espPin, GPIO.HIGH)
         
         data = ser.readline().decode('utf-8')
-        print("ESP Rspn: {0}\n".format(data))
+        #print("ESP Rspn: {0}\n".format(data))
         GPIO.output(espPin, GPIO.LOW)
         if data.startswith("val="):
             toc = time.perf_counter()
-            print("[{0}] ESP Value = {1}, ".format(toc-tic, int(data.split("val=")[1])))
+            #print("[{0}] ESP Value = {1}, ".format(toc-tic, int(data.split("val=")[1])))
             #TODO: Raise semaphore
             lock.acquire()
             sensorVal = int(data.split("val=")[1])
@@ -217,12 +217,12 @@ def UpdateLed(avg_reading):
     #ToDO: include the actual LED on PI
     ledStatus = {'ESP_LED':0, 'Pi_LED':0}
     if avg_reading['ESP'] <= avg_reading['Pi']:
-        print('Turn on the ESP LED')
+        #print('Turn on the ESP LED')
         ledStatus['ESP_LED'] = 1
         changeLeds(bPWM, 'on')
         changeLeds(gPWM, 'off')
     else:
-        print('Turn on Pi LED')
+        #print('Turn on Pi LED')
         ledStatus['Pi_LED'] = 1
         changeLeds(bPWM, 'off')
         changeLeds(gPWM, 'on')
@@ -245,11 +245,11 @@ def AppThread(lock):
     def AppDispatch():
         while True:
             evt.wait()
-            print('AppThread Signalled')
+            #print('AppThread Signalled')
             for dic in valList:
                 if not 'Pi_Val' in dic:
                     dic.update(readSensor(lock))
-                    print('update item in the list= {0}, list len {1}'.format(dic, len(valList)))
+                    print('new values = {0}, list len {1}'.format(dic, len(valList)))
 
             #Check if the list has 8 pairs (2 seconds window)
             if len(valList) >= 8:
