@@ -18,7 +18,7 @@ static const uint32_t calibrationIntMS = 3000;       // time needed for calibrat
 static const uint32_t dataTimerInt = 250;      
 static const uint32_t blinkingTimerMS = 2000;
 static const uint32_t blinkingWindowMS = 250;  
-static const uint32_t disconnectTimeoutMS = 15 * 60 * 1000;
+static const uint32_t disconnectTimeoutMS = 2 * 60 * 1000;
 
 
 static const uint8_t lightDebounce = 30;

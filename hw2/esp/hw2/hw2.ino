@@ -144,7 +144,7 @@ void tryConnectionCb() {
 
 void dataTimerCb(void)
 {
-  Serial.printf("dataTimerCb\n");
+  //Serial.printf("dataTimerCb\n");
   bSendData = true;
 }
 
@@ -193,10 +193,10 @@ void sendDataToServer() {
     doc["ESP_Val"] = readSensor();
 
 
-    Serial.println("JSON Output:");
+    //Serial.println("JSON Output:");
     //Print over serial
-    serializeJsonPretty(doc, Serial);
-    Serial.println();
+    //serializeJsonPretty(doc, Serial);
+    //Serial.println();
 
     // send data over tcp
     serializeJsonPretty(doc, client);
@@ -233,7 +233,7 @@ void handleRxData(String msg){
   int ESP_LED = doc["ESP_LED"];
   int Pi_LED = doc["Pi_LED"];
    
-  Serial.println("Received LEDs; ESP LED: " + String(ESP_LED) + " ; Pi LED: " + String(Pi_LED) + "\n");
+  //Serial.println("Received LEDs; ESP LED: " + String(ESP_LED) + " ; Pi LED: " + String(Pi_LED) + "\n");
 
   //Apply LED pattern
   digitalWrite(piLED, Pi_LED == 1? HIGH:LOW );
@@ -289,7 +289,7 @@ void loop() {
   // from the server, read them and print them:
   if (client.available()) {
     
-    Serial.printf("Data is Available = %d\n", client.available());
+    Serial.printf("Available data from server = %d bytes\n", client.available());
     String incomingData;
 
     while (client.available()) {
@@ -297,7 +297,7 @@ void loop() {
       incomingData += (char) client.read();
       
     }
-    Serial.println("Recieve String " + incomingData + "\n");
+    Serial.println("Received Msg: " + incomingData + "\n");
     
     handleRxData( incomingData );
     
