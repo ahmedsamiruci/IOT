@@ -207,8 +207,12 @@ void sendDataToServer() {
   }
   else {
     //Serial.println("TCP disconencted!!!, wait 5 sec then conn");
+    Serial.println("Server disconnected!!");
     connectMillis = 0;
     ISR_Timer.disable(dataTimerId);
+    digitalWrite(initLED, LOW);
+    digitalWrite(piLED, LOW);
+    digitalWrite(espLED, LOW);
     /*ISR_Timer.setTimeout(5000, tryConnectionCb);
     startBlinkyTimer(BLINKY_MODE_INFINITY, 0);*/
   }
@@ -239,6 +243,8 @@ void handleRxData(String msg){
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
+  //Serial1.begin(115200); // Serial1 can TX only on pin D4
+  
   while (!Serial);
   delay(100);
 
@@ -302,12 +308,12 @@ void loop() {
     // check the total connection time to initiate disconnection
     if( (millis() - connectMillis) >= disconnectTimeoutMS) {
       Serial.printf("Disconnection timeout after %d mins, disconnecting...\n", (disconnectTimeoutMS/1000/60));
-      client.stop();
       connectMillis = 0;
       //turn off all LEDs
       digitalWrite(initLED, LOW);
       digitalWrite(piLED, LOW);
       digitalWrite(espLED, LOW);
+      client.stop();
     }
   }
 
