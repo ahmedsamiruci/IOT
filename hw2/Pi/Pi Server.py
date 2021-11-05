@@ -4,7 +4,7 @@ from os import error
 import socket
 import sys
 import json
-from threading import Thread, Event
+from threading import Thread, Event, Lock
 #from time import sleep
 import time
 import random
@@ -17,6 +17,7 @@ import serial
 
 testModeEnabled = False
 
+sensorVal = None
 ser = None
 espPin = 23
 sock = None
@@ -165,25 +166,40 @@ def threadWrapper(tcpThread):
     return wrapper()
 
 
-def readSensor():
+def readSensor(lock):
 
     if testModeEnabled:
         return {"Pi_Val" : random.randint(0,200)}
     else:
+        global sensorVal
+        #TODO Raise Semaphore
+        lock.acquire()
+        value = {"Pi_Val" : sensorVal}
+        #TODO Release Semaphore
+        lock.release()
+        return value
+ 
+def EspThread(lock):
+    global sensorVal
+    
+    while True:
         tic = time.perf_counter()
         # Raise the ESP Interrupt pin
         #print("----> raise pin\n")
         GPIO.output(espPin, GPIO.HIGH)
         
-        while True:
-            data = ser.readline().decode('utf-8')
-            print("ESP Rspn: {0}\n".format(data))
-            GPIO.output(espPin, GPIO.LOW)
-            if data.startswith("val="):
-                #print("Val= {0}\n".format(int(data.split("val=")[1])))
-                toc = time.perf_counter()
-                print("ESP time taken = {0}".format(toc-tic))
-                return {"Pi_Val" : int(data.split("val=")[1])}
+        data = ser.readline().decode('utf-8')
+        print("ESP Rspn: {0}\n".format(data))
+        GPIO.output(espPin, GPIO.LOW)
+        if data.startswith("val="):
+            toc = time.perf_counter()
+            print("[{0}] ESP Value = {1}, ".format(toc-tic, int(data.split("val=")[1])))
+            #TODO: Raise semaphore
+            lock.acquire()
+            sensorVal = int(data.split("val=")[1])
+            #TODO: Release semaphore
+            lock.release()
+    
  
 def calcAvg():
     avg_reading = {'ESP': 0, 'Pi': 0}
@@ -222,7 +238,7 @@ def sendData(dictObj):
     connection.send(msgStr.encode())
 
 
-def AppThread():
+def AppThread(lock):
 
     print("App Thread Started\n")
     
@@ -232,7 +248,7 @@ def AppThread():
             print('AppThread Signalled')
             for dic in valList:
                 if not 'Pi_Val' in dic:
-                    dic.update(readSensor())
+                    dic.update(readSensor(lock))
                     print('update item in the list= {0}, list len {1}'.format(dic, len(valList)))
 
             #Check if the list has 8 pairs (2 seconds window)
@@ -325,11 +341,16 @@ def mainProgram():
     configESP82Comm()
     
     try:
+        # creating a lock
+        lock = Lock()
+        
         tcpThreadObj = Thread(target=threadWrapper, args=(tcpThread,))
-        AppThreadObj = Thread(target=AppThread)
+        AppThreadObj = Thread(target=AppThread, args=(lock,))
+        EspThreadObj = Thread(target=EspThread, args=(lock,))
 
         AppThreadObj.start()
         tcpThreadObj.start()
+        EspThreadObj.start()
 
     except KeyboardInterrupt:
         print('receive keyboard interrupt, terminate the program')
