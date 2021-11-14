@@ -21,8 +21,9 @@ class DeviceInfo {
     static void setCallbacks(DeviceInfoCallbacks* pCallBacks);
 
     void notifyEvt(std::string msg);
+    void updateEvt(std::string msg);
     void updateStatus(std::string msg);
-    void updateUTC(uint32_t utc);
+    void updateUTC(std::string utcStr);
 
     static DeviceInfoCallbacks* m_pCallbacks;
   private:

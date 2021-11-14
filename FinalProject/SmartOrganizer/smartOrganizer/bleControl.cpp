@@ -52,7 +52,19 @@ class MyServerCallbacks: public BLEServerCallbacks {
 class MyCharCallbacks: public BLECharacteristicCallbacks {
     void onRead(BLECharacteristic* pCharacteristic) {
       Serial.println("onRead Evt");
-      //Serial.println(pCharacteristic->toString());
+      if(pCharacteristic->getUUID().equals(BLEUUID(SCHEDULE_CHAR_UUID))) {
+        DeviceInfo::m_pCallbacks->onScheduleRead();
+      } else if(pCharacteristic->getUUID().equals(BLEUUID(UTC_CHAR_UUID))) {
+        DeviceInfo::m_pCallbacks->onUTCRead();
+      } else if(pCharacteristic->getUUID().equals(BLEUUID(STATUS_CHAR_UUID))) {
+        DeviceInfo::m_pCallbacks->onStatusRead();
+      } else if(pCharacteristic->getUUID().equals(BLEUUID(EVT_CHAR_UUID))) {
+        DeviceInfo::m_pCallbacks->onEvtRead();
+      }
+      else {
+        Serial.printf("not handled yet|n");
+      }
+      
     }
 
     void onWrite(BLECharacteristic* pCharacteristic) {
@@ -60,6 +72,10 @@ class MyCharCallbacks: public BLECharacteristicCallbacks {
       if(pCharacteristic->getUUID().equals(BLEUUID(UTC_CHAR_UUID))) {
           Serial.printf("UTC char\n");
           DeviceInfo::m_pCallbacks->onUTCUpdate(pCharacteristic->getValue());
+      }
+      else if (pCharacteristic->getUUID().equals(BLEUUID(SCHEDULE_CHAR_UUID))) {
+        Serial.printf("Schedule char\n");
+        DeviceInfo::m_pCallbacks->onScheduleUpdate(pCharacteristic->getValue());
       }
       else {
         Serial.printf("not handled yet|n");
@@ -165,9 +181,12 @@ void DeviceInfo::notifyEvt(std::string msg) {
     }
 }
 
+void DeviceInfo::updateEvt(std::string msg) {
+  m_pEVTChar->setValue(msg);
+}
 
-void DeviceInfo::updateUTC(uint32_t utc) {
-  m_pUTCChar->setValue(utc);
+void DeviceInfo::updateUTC(std::string utcStr) {
+  m_pUTCChar->setValue(utcStr);
 }
 
 void DeviceInfo::updateStatus(std::string msg) {
