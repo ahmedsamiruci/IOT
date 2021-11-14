@@ -1,6 +1,6 @@
 
 #include "bleControl.h"
-
+#include "BLEUtils.h"
 
 
 /*
@@ -28,7 +28,13 @@ a84c0cd0-4514-11ec-81d3-0242ac130003
   return;\
 }\
 
+
+
+DeviceInfoCallbacks* DeviceInfo::m_pCallbacks = NULL;
+
 static bool bConnected = false;
+static DeviceInfoCallbacks defaultCallback; //null-object-pattern
+static BLE2902  descriptorObj;
 
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
@@ -50,7 +56,15 @@ class MyCharCallbacks: public BLECharacteristicCallbacks {
     }
 
     void onWrite(BLECharacteristic* pCharacteristic) {
-      Serial.println("onWrite Evt");
+      Serial.printf("onWrite Evt..");
+      if(pCharacteristic->getUUID().equals(BLEUUID(UTC_CHAR_UUID))) {
+          Serial.printf("UTC char\n");
+          DeviceInfo::m_pCallbacks->onUTCUpdate(pCharacteristic->getValue());
+      }
+      else {
+        Serial.printf("not handled yet|n");
+      }
+      
       //Serial.println(pCharacteristic->toString());
     }
 
@@ -65,16 +79,16 @@ class MyCharCallbacks: public BLECharacteristicCallbacks {
     }
 };
 
+static MyServerCallbacks serverCallbacks;
+static MyCharCallbacks charCallbacks;
 
 DeviceInfo::DeviceInfo() {
-  m_pServerCallbacks = new MyServerCallbacks();
-  m_pCharCallbacks = new MyCharCallbacks();
+  m_pServerCallbacks = &serverCallbacks;
+  m_pCharCallbacks = &charCallbacks;
+  m_pCallbacks = &defaultCallback;
 }
 
 DeviceInfo::~DeviceInfo() {
-  delete m_pServerCallbacks;
-  delete m_pCharCallbacks;
-  delete m_pEVTDesc;
 }
 
 void DeviceInfo::setupDevice() {
@@ -95,7 +109,7 @@ void DeviceInfo::setupDevice() {
                     );
   CHECK_ERROR(m_pScheduleChar, "Schedule is Null");
   m_pScheduleChar->setCallbacks(m_pCharCallbacks);
-  m_pScheduleChar->setValue("Schedule None");
+  m_pScheduleChar->setValue("NA");
 
   m_pUTCChar = m_pService->createCharacteristic(
                  UTC_CHAR_UUID,
@@ -104,7 +118,8 @@ void DeviceInfo::setupDevice() {
                );
   CHECK_ERROR(m_pUTCChar, "UTC is Null");
   m_pUTCChar->setCallbacks(m_pCharCallbacks);
-  m_pUTCChar->setValue("UTC None");
+  uint32_t val = 0;
+  m_pUTCChar->setValue(val);
 
 
   m_pStatusChar = m_pService->createCharacteristic(
@@ -113,7 +128,7 @@ void DeviceInfo::setupDevice() {
                   );
   CHECK_ERROR(m_pStatusChar, "Status is Null");
   m_pStatusChar->setCallbacks(m_pCharCallbacks);
-  m_pStatusChar->setValue("Status None");
+  m_pStatusChar->setValue("NA");
 
   m_pEVTChar = m_pService->createCharacteristic(
                  EVT_CHAR_UUID,
@@ -121,10 +136,10 @@ void DeviceInfo::setupDevice() {
                  BLECharacteristic::PROPERTY_NOTIFY
                );
   CHECK_ERROR(m_pEVTChar, "EVT is Null");
-  m_pEVTDesc = new BLE2902();
+  m_pEVTDesc = &descriptorObj;
   m_pEVTChar->addDescriptor(m_pEVTDesc);
   m_pEVTChar->setCallbacks(m_pCharCallbacks);
-  m_pEVTChar->setValue("EVT None");
+  m_pEVTChar->setValue("NA");
 
   m_pService->start();
 }
@@ -142,6 +157,7 @@ void DeviceInfo::setupAdverising() {
 
 void DeviceInfo::notifyEvt(std::string msg) {
     //Serial.printf("Connected = %d, Notification = %d\n", bConnected, m_pEVTDesc->getNotifications());
+   
     // set char value regardless of the connection.
     m_pEVTChar->setValue(msg);
     if(bConnected && m_pEVTDesc->getNotifications()) {
@@ -149,6 +165,41 @@ void DeviceInfo::notifyEvt(std::string msg) {
     }
 }
 
+
+void DeviceInfo::updateUTC(uint32_t utc) {
+  m_pUTCChar->setValue(utc);
+}
+
+void DeviceInfo::updateStatus(std::string msg) {
+  m_pStatusChar->setValue(msg);
+}
+
+void DeviceInfo::setCallbacks(DeviceInfoCallbacks* pCallbacks) {
+  m_pCallbacks = pCallbacks;
+}
+
+DeviceInfoCallbacks::~DeviceInfoCallbacks() {
+  
+}
+
+void DeviceInfoCallbacks::onScheduleUpdate(std::string value) {
+  
+}
+void DeviceInfoCallbacks::onScheduleRead(void) {
+  
+}
+void DeviceInfoCallbacks::onUTCUpdate(std::string utc) {
+  
+}
+void DeviceInfoCallbacks::onUTCRead(void) {
+  
+}
+void DeviceInfoCallbacks::onStatusRead(void) {
+  
+}
+void DeviceInfoCallbacks::onEvtRead(void) {
+  
+}
 
 /*
 void setupBLE(void) {
