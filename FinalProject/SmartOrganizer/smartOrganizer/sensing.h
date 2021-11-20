@@ -12,12 +12,19 @@ class sensing {
 
   static void init();
   static void setCallbacks(sensingCallbacks* psensingCallbacks);
-  void setTempThreshold(uint8_t tempThreshold);
+  static void setTempThreshold(uint8_t tempThreshold);
+  static uint8_t getTempThreshold();
+  static void setTempCheckFreq(uint8_t seconds);
+  static uint8_t getTempCheckFreq();
   int8_t getTemp(void);
+  void loop(void);
 
-  private:
   static sensingCallbacks*   m_psensingCallbacks;
-  uint8_t                     m_tempThreshold;
+  
+  private:
+  
+  static uint8_t             m_freqSec;
+  static uint8_t             m_tempThreshold;
   
 };
 

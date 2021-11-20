@@ -63,6 +63,9 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   static uint32_t count = 0;
+
+  m_sensing.loop();
+  
   delay(2000);
   Serial.printf("Count = %d\n", count);
   StaticJsonDocument<capacity> doc;
