@@ -19,16 +19,14 @@ class DeviceInfo {
     void setupDevice();
     void setupAdverising();
     static void setCallbacks(DeviceInfoCallbacks* pCallBacks);
-
     void notifyEvt(std::string msg);
     void updateEvt(std::string msg);
     void updateStatus(std::string msg);
     void updateUTC(std::string utcStr);
 
     static DeviceInfoCallbacks* m_pCallbacks;
+   
   private:
-    //friend class MyServerCallbacks;
-    //friend class BLEServerCallbacks;
 
     BLEServer* m_pServer = NULL;
     BLEService* m_pService = NULL;
@@ -57,9 +55,5 @@ class DeviceInfoCallbacks {
   virtual void onEvtRead(void);
  
 };
-
-//void setupBLE(void);
-//void loopBLE(void);
-
 
 #endif //__BLECONTROL__
