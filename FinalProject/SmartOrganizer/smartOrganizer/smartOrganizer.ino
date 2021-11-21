@@ -65,6 +65,7 @@ void setup() {
   // Initialize Sensing
   sensing::init();
   sensing::setCallbacks(new sensingObjectCallbacks());
+  sensing::setTempThreshold(30);
 }
 
 void loop() {

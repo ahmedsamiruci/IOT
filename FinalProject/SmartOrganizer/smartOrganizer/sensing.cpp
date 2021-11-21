@@ -2,7 +2,8 @@
 #include "ESP32TimerInterrupt.h"
 #include "ESP32_ISR_Timer.h"
 #include <ezButton.h>
-
+#include <Wire.h>
+#include <Adafruit_BMP280.h>
 
 #define HW_TIMER_INTERVAL_US      10000L
 #define TEMP_FREQ_SEC (10)
@@ -56,7 +57,7 @@ ESP32Timer ITimer(1);
 // Init ESP32_ISR_Timer
 ESP32_ISR_Timer ISR_Timer;
 
-
+Adafruit_BMP280 bmp; // I2C
 static sensingCallbacks defaultCallbacks; // null object pattern
 sensingCallbacks* sensing::m_psensingCallbacks = NULL;
 uint8_t           sensing::m_freqSec = TEMP_FREQ_SEC;
@@ -157,6 +158,20 @@ void initTimers(void) {
   timerId = ISR_Timer.setInterval(sensing::getTempCheckFreq() * 1000, freqTimerCb);
 }
 
+void initTempSensor(void) {
+  if (!bmp.begin(0x76)) {
+    Serial.println(F("Could not find a valid BMP280 sensor, check wiring or "
+                      "try a different address!"));
+    while (1) delay(10);
+  }
+
+  /* Default settings from datasheet. */
+  bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
+                  Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
+                  Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
+                  Adafruit_BMP280::FILTER_X16,      /* Filtering. */
+                  Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
+}
 
 sensing::sensing() {
   //initialize sensors here
@@ -172,6 +187,8 @@ void sensing::init() {
   initTimers();
 
   initHallSwitches();
+
+  initTempSensor();
 }
 
 void sensing::setCallbacks(sensingCallbacks* psensingCallbacks) {
@@ -187,8 +204,7 @@ uint8_t sensing::getTempThreshold() {
 }
 
 static int8_t readTemp(void) {
-  //return rand value for now
-  return random(10, 40);
+  return bmp.readTemperature();
 }
 
 int8_t sensing::getTemp(void) {
@@ -206,15 +222,15 @@ uint8_t sensing::getTempCheckFreq() {
 
 
 void checkTemp(uint8_t temp) {
-  Serial.printf("Cur Temp = %d\n", temp);
+  Serial.printf("Cur Temp = %d, Threshold = %d\n", temp, sensing::getTempThreshold());
   // Check Temp Threshold
   if (temp >= sensing::getTempThreshold()) {
     // Generate alarm event
     sensing::m_psensingCallbacks->onTempEvt(temp, TEMP_EVT_ALARM);
   }
-  else {
+  /*else {
     sensing::m_psensingCallbacks->onTempEvt(temp, TEMP_EVT_NORMAL);
-  }
+  }*/
 }
 
 
