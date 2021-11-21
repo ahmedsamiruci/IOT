@@ -2,6 +2,7 @@
 #define __SENSING__
 
 #include <Arduino.h>
+#include <string>
 
 class sensingCallbacks;
 
@@ -34,17 +35,13 @@ typedef enum {
   TEMP_EVT_ALARM,
 }enu_tempEvt;
 
-typedef enum{
-  SLOT_EVT_OPEN = 0,
-  SLOT_EVT_CLOSE,
-}enu_slotEvt;
 
 class sensingCallbacks{
   public:
   virtual ~sensingCallbacks();
   
   virtual void onTempEvt(int8_t temp, enu_tempEvt tempEvt);
-  virtual void onSlotEvt(uint8_t slotNo, enu_slotEvt slotEvt);
+  virtual void onSlotEvt(String slotName, String slotEvt);
 };
 
 

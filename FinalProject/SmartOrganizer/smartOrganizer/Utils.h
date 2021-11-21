@@ -4,7 +4,6 @@
 
 #include <string>
 
-
 std::string intToString(uint32_t number) {
   char c_str[30];
   memset(c_str, 0, 30);

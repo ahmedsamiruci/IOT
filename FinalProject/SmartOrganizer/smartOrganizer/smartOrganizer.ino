@@ -45,8 +45,8 @@ class sensingObjectCallbacks : public sensingCallbacks {
   void onTempEvt(int8_t temp, enu_tempEvt tempEvt) {
     Serial.printf("onTempEvt, Evt Type = %d, temp = %d\n", tempEvt, temp);
   }
-  void onSlotEvt(uint8_t slotNo, enu_slotEvt slotEvt) {
-    Serial.printf("onSlotEvt, Slot# = %d, slotEvt = %d\n", slotNo, slotEvt);
+  void onSlotEvt(String slotName, String slotEvt) {
+    Serial.printf("onSlotEvt, SlotName = %s, slotEvt = %s\n", slotName, slotEvt);
   }
 };
 
