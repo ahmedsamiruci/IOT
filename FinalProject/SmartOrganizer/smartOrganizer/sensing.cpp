@@ -222,7 +222,7 @@ uint8_t sensing::getTempCheckFreq() {
 
 
 void checkTemp(uint8_t temp) {
-  Serial.printf("Cur Temp = %d, Threshold = %d\n", temp, sensing::getTempThreshold());
+  //Serial.printf("Cur Temp = %d, Threshold = %d\n", temp, sensing::getTempThreshold());
   // Check Temp Threshold
   if (temp >= sensing::getTempThreshold()) {
     // Generate alarm event

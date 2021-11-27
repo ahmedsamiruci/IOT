@@ -111,6 +111,7 @@ DeviceInfo::~DeviceInfo() {
 void DeviceInfo::setupDevice() {
 
   BLEDevice::init("SmartOrganizer");
+  BLEDevice::setMTU(128);
   Serial.println("Compose Service ...");
   m_pServer = BLEDevice::createServer();
   CHECK_ERROR(m_pServer, "Server is Null");

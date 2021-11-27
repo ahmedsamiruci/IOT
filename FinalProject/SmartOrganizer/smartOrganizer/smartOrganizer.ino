@@ -43,17 +43,13 @@ class bleDeviceCallbacks : public DeviceInfoCallbacks{
 class sensingObjectCallbacks : public sensingCallbacks {
   void onTempEvt(int8_t temp, enu_tempEvt tempEvt) {
     Serial.printf("onTempEvt, Evt Type = %d, temp = %d\n", tempEvt, temp);
+    String msg = "temp:" + temp;
+    m_bleDevice.notifyEvt(msg.c_str());
   }
   void onSlotEvt(String slotName, String slotEvt) {
     Serial.printf("onSlotEvt, SlotName = %s, slotEvt = %s\n", slotName, slotEvt);
-    std::string msg;
-    StaticJsonDocument<capacity> doc;
-    doc["evt"] = "slot";
-    doc["name"] = slotName;
-    doc["type"] = slotEvt;
-    serializeJsonPretty(doc, msg);
-
-    m_bleDevice.notifyEvt(msg);
+    String msg = "slot:" + slotName + "," + slotEvt;
+    m_bleDevice.notifyEvt(msg.c_str());
   }
 };
 
