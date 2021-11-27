@@ -25,8 +25,7 @@ class bleDeviceCallbacks : public DeviceInfoCallbacks{
   }
 
   void onEvtRead(void) {
-    //TODO send actual schedule
-    m_bleDevice.updateEvt("hello from read\n");
+    //m_bleDevice.updateEvt("Event Char read\n");
   }
 
   void onUTCRead(void) {
@@ -36,7 +35,7 @@ class bleDeviceCallbacks : public DeviceInfoCallbacks{
   }
 
   void onStatusRead(void) {
-    m_bleDevice.updateStatus("hello from read\n");
+    m_bleDevice.updateStatus("Status Char read\n");
   }
 };
 
@@ -47,6 +46,14 @@ class sensingObjectCallbacks : public sensingCallbacks {
   }
   void onSlotEvt(String slotName, String slotEvt) {
     Serial.printf("onSlotEvt, SlotName = %s, slotEvt = %s\n", slotName, slotEvt);
+    std::string msg;
+    StaticJsonDocument<capacity> doc;
+    doc["evt"] = "slot";
+    doc["name"] = slotName;
+    doc["type"] = slotEvt;
+    serializeJsonPretty(doc, msg);
+
+    m_bleDevice.notifyEvt(msg);
   }
 };
 
@@ -76,14 +83,14 @@ void loop() {
   
   //delay(2000);
   //Serial.printf("Count = %d\n", count);
-  StaticJsonDocument<capacity> doc;
-  doc["Cnt"] = count;
-  std::string str;
-  serializeJsonPretty(doc, str);
-  m_bleDevice.notifyEvt(str);
-
-  m_bleDevice.updateUTC(intToString(m_utc));
-  m_utc++;
-  //m_bleDevice.notifyEvt(std::to_string(count));
-  count++;
+//  StaticJsonDocument<capacity> doc;
+//  doc["Cnt"] = count;
+//  std::string str;
+//  serializeJsonPretty(doc, str);
+//  m_bleDevice.notifyEvt(str);
+//
+//  m_bleDevice.updateUTC(intToString(m_utc));
+//  m_utc++;
+//  //m_bleDevice.notifyEvt(std::to_string(count));
+//  count++;
 }
