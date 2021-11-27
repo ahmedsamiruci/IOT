@@ -121,6 +121,10 @@ def tcpThread():
                 if data == b'':
                     print("connection dropped")
                     #sock.shutdown(socket.SHUT_RDWR)
+                    #turn off leds
+                    changeLeds(rPWM, 'slow1')
+                    changeLeds(bPWM, 'off')
+                    changeLeds(gPWM, 'off')
                     break
 
 
@@ -183,7 +187,7 @@ def EspThread(lock):
     global sensorVal
     
     while True:
-        tic = time.perf_counter()
+        #tic = time.perf_counter()
         # Raise the ESP Interrupt pin
         #print("----> raise pin\n")
         GPIO.output(espPin, GPIO.HIGH)
@@ -192,7 +196,7 @@ def EspThread(lock):
         #print("ESP Rspn: {0}\n".format(data))
         GPIO.output(espPin, GPIO.LOW)
         if data.startswith("val="):
-            toc = time.perf_counter()
+            #toc = time.perf_counter()
             #print("[{0}] ESP Value = {1}, ".format(toc-tic, int(data.split("val=")[1])))
             #TODO: Raise semaphore
             lock.acquire()
