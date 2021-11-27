@@ -158,6 +158,11 @@ void DeviceInfo::setupDevice() {
   m_pEVTChar->setValue("NA");
 
   m_pService->start();
+
+  // Print BLE Device Address
+  std::string dvcAddr = BLEDevice::getAddress().toString();
+  Serial.printf("BLE Device Addr = %s\n", dvcAddr);
+
 }
 
 void DeviceInfo::setupAdverising() {
