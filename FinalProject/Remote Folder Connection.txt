@@ -1,0 +1,19 @@
+Remote Folder Connection
+
+// Mount Command
+sshfs pi@192.168.86.25:/home/pi/assignments /Users/ahmedsamir/Documents/piRemoteFolder
+
+// Reconnect command
+sshfs -o reconnect pi@192.168.86.25:/home/pi/assignments
+
+// unmount folder
+umount /Users/ahmedsamir/Documents/piRemoteFolder
+
+// unmount busy folder
+umount -f /Users/ahmedsamir/Documents/piRemoteFolder
+
+// get process id in case of hang
+ps aux | grep pi@192.168.86.25
+
+// kill the process
+kill -9 <pid of locked sshfs process>
