@@ -2,6 +2,8 @@ import tagBle
 import datetime
 import time
 import json
+import sys
+import signal
 from threading import Thread, Event, Lock
 
 
@@ -56,7 +58,7 @@ def inWindow(schedule, hr):
     if type(hr) == str:
         hr = int(hr)
         
-    if (hr in range(schedule["AM_Window"][0], schedule["AM_Window"][1])) or (hr in range(schedule["PM_Window"][0], schedule["PM_Window"][1])):
+    if (hr in range(schedule["AM_Window"][0], schedule["AM_Window"][1] + 1 )) or (hr in range(schedule["PM_Window"][0], schedule["PM_Window"][1] + 1)):
         return True
     else:
         return False
@@ -72,7 +74,7 @@ def insertEvent(event, data):
         slotEvtList.append(evt)
 
     else:
-        print('Temp event: day[{0}], slot[{1}], hr[{2}], data[{3}]'.format(evt['day'],evt['slot'],evt['hr'],evt['data']))
+        print('Temp event: day[{0}], slot[{1}], hr[{2}], data[{3}]'.format(evt['day'],evt['slot'],evt['Hr'],evt['data']))
         tempEvtList.append(evt)
 
 def findOpenEvent(day, slot):
@@ -125,54 +127,66 @@ def updateSlotStatus(schedule, day, slot):
         #print('updateSlotStatus: schedule is ready with: {0}'.format(schedule[day][slot]['status']))
         return False
 
+def generateTempAlarm():
+    print('[TODO] Generate Temp Alarm')   
 
-    # if no medicine event generate a reminder
-        # decrement the no of remaining reminders   -> reminder counter
-        # repeat the check afte reminder Timeout    -> reminder timeout
-    # if there is opening event
-        # cancel the alarm and consider medicine as taken -> marker for taken medicine
-# else: 
-    # generate alarm for the missed dose
-    # mark this slot as missing
+def checkTemp(schedule):
+    if schedule['tempAlarm'] == "":
+        for tempEvt in tempEvtList:
+            if tempEvt['data'] > schedule['tempThreshold']:
+                schedule['tempAlarm'] = 'high'
+                generateTempAlarm()
+                return True
 
 def reminderThread():
-    while True:
-        # Get current time
-        day = getCurrDay()
-        slot = getCurrSlot()
-        hr = getCurrHr()
-        print('current data: day[{0}], slot[{1}], hr[{2}]'.format(day,slot,hr))
 
-        # Get Schedule
-        bUpdateSchedule = False
-        schedule = fetchSchedule()
+    try:
+        while True:
+            # Get current time
+            day = getCurrDay()
+            slot = getCurrSlot()
+            hr = getCurrHr()
+            print('current data: day[{0}], slot[{1}], hr[{2}]'.format(day,slot,hr))
 
-        # check schedule to see if there is a medicine slot
-        if (day in schedule):
-            # If time within slot time and there is a medicine slot
-            if  inWindow(schedule, hr) and (slot in schedule[day]):
-                bUpdateSchedule = updateSlotStatus(schedule, day, slot)
-            else:
-                print('time is not within the window ({0})', inWindow(schedule, hr))
+            # Get Schedule
+            bUpdateSchedule = False
+            schedule = fetchSchedule()
 
+            # check schedule to see if there is a medicine slot
+            if (day in schedule):
+                # If time within slot time and there is a medicine slot
+                if  inWindow(schedule, hr) and (slot in schedule[day]):
+                    bUpdateSchedule = updateSlotStatus(schedule, day, slot)
+                else:
+                    print('No Medicine at this time')
 
-        # Update Schdule
-        if bUpdateSchedule:
-            updateSchedule(schedule)
+            
+            # Check on Temp Alarms
+            bUpdateSchedule = checkTemp(schedule)
 
-        time.sleep(10)
+            # Update Schdule
+            if bUpdateSchedule:
+                updateSchedule(schedule)
 
-
+            time.sleep(10)
+    finally:
+        print('GoodBye !!!')
 
 
 def main():
     print("The main smartOrganizer brain")
-    dvcThreadObj = Thread(target=tagBle.catchSmartDevice, args=(insertEvent,))
-    reminderThreadObj = Thread(target=reminderThread)
 
-    dvcThreadObj.start()
-    reminderThreadObj.start()
+    try:
+        dvcThreadObj = Thread(target=tagBle.catchSmartDevice, args=(insertEvent,))
+        reminderThreadObj = Thread(target=reminderThread)
+
+        dvcThreadObj.start()
+        reminderThreadObj.start()
+    
+    finally:
+        print('GoodBye !!!')
 
 if __name__ == "__main__":
     main()
+    
 

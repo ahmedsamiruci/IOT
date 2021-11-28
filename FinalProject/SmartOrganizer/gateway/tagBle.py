@@ -24,6 +24,7 @@ class NotifyDelegate(DefaultDelegate):
 
     def handleNotification(self, cHandle, data):
         print("Got notification from handle {0}".format(cHandle))
+        print('Notification Data:{0}'.format(data))
         rxData = data.decode("utf-8").split(':')
         evtCb(rxData[0], rxData[1])
 
