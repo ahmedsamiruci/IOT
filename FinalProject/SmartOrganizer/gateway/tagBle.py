@@ -56,25 +56,24 @@ def connectSmartDvc(scanDvc):
     EVT_CHAR_UUID = "a84c094c-4514-11ec-81d3-0242ac130003"
 
     print("Initiate connection to SmartOrganizer...")
-    try:
+    
+    smartDvc = Peripheral(scanDvc)
+    smartDvc.setDelegate(NotifyDelegate())
+    #print("Reading Chars...")
+    printDvcChar(smartDvc)
+    statusChar = smartDvc.getCharacteristics(uuid=STATUS_CHAR_UUID)[0]
+    evtChar = smartDvc.getCharacteristics(uuid=EVT_CHAR_UUID)[0]
+    evtNotifyHandle = evtChar.getHandle() + 1
+    notifySetup = b"\x01\x00"
+    smartDvc.writeCharacteristic(evtNotifyHandle, notifySetup)     
 
-        smartDvc = Peripheral(scanDvc)
-        smartDvc.setDelegate(NotifyDelegate())
-        #print("Reading Chars...")
-        printDvcChar(smartDvc)
-        statusChar = smartDvc.getCharacteristics(uuid=STATUS_CHAR_UUID)[0]
-        evtChar = smartDvc.getCharacteristics(uuid=EVT_CHAR_UUID)[0]
-        evtNotifyHandle = evtChar.getHandle() + 1
-        notifySetup = b"\x01\x00"
-        smartDvc.writeCharacteristic(evtNotifyHandle, notifySetup)     
+    return smartDvc
 
-        return smartDvc
-
-    except BTLEDisconnectError as e:
-        print("connectSmartDvc: {!r}".format(e))
-        raise BTLEDisconnectError
-    except BaseException as e:
-        print('{!r}; Exception in connectSmartDvc'.format(e))
+    # except BTLEDisconnectError as e:
+    #     print("connectSmartDvc: {!r}".format(e))
+    #     raise BTLEDisconnectError
+    # except BaseException as e:
+    #     print('{!r}; Exception in connectSmartDvc'.format(e))
 
 
 def catchSmartDevice(_evtCb=None):
@@ -91,6 +90,7 @@ def catchSmartDevice(_evtCb=None):
         print("Found the smartOrganizer")
         
         try:
+            connectedDvc = None
             connectedDvc = connectSmartDvc(smartOrganizer)
 
             while True:
@@ -102,7 +102,8 @@ def catchSmartDevice(_evtCb=None):
         except BaseException as e:
             print('{!r}; Exception in catchSmartDevice'.format(e))
         finally:
-                connectedDvc.disconnect()
+                if connectedDvc is not None: 
+                    connectedDvc.disconnect()
     else:
         print("Couldn't find SmartOrganizer!")
 
