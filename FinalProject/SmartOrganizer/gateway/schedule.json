@@ -1,0 +1,82 @@
+{
+    "reminderTimeout": 30,
+    "alarms": "on",
+    "AM_Window": [
+        8,
+        10
+    ],
+    "PM_Window": [
+        4,
+        6
+    ],
+    "Sat": {
+        "AM": {
+            "reminders": 2,
+            "status": ""
+        },
+        "PM": {
+            "reminders": 2,
+            "status": ""
+        }
+    },
+    "Sun": {
+        "AM": {
+            "reminders": 2,
+            "status": ""
+        },
+        "PM": {
+            "reminders": 2,
+            "status": ""
+        }
+    },
+    "Mon": {
+        "AM": {
+            "reminders": 2,
+            "status": ""
+        },
+        "PM": {
+            "reminders": 2,
+            "status": ""
+        }
+    },
+    "Tue": {
+        "AM": {
+            "reminders": 2,
+            "status": ""
+        },
+        "PM": {
+            "reminders": 2,
+            "status": ""
+        }
+    },
+    "Wed": {
+        "AM": {
+            "reminders": 2,
+            "status": ""
+        },
+        "PM": {
+            "reminders": 2,
+            "status": ""
+        }
+    },
+    "Thu": {
+        "AM": {
+            "reminders": 2,
+            "status": ""
+        },
+        "PM": {
+            "reminders": 2,
+            "status": ""
+        }
+    },
+    "Fri": {
+        "AM": {
+            "reminders": 2,
+            "status": ""
+        },
+        "PM": {
+            "reminders": 2,
+            "status": ""
+        }
+    }
+}

@@ -1,114 +1,57 @@
 import tagBle
 import datetime
 import time
+import json
 from threading import Thread, Event, Lock
 
-
-# schedule = {
-#                 "days": ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"],
-#                 "slots": ["AM", "PM"],
-#                 "alarms": "on"
-#             }
 
 slotEvtList = []
 tempEvtList = []
 
-#   day     AM Slot [valid       #Reminders     status]       PM Slot [valid       #Reminders     status]
-#   Sat              yes/no        2/1/0        missed/taken
-schedule = {
-    "reminderTimeout": 30,
-    "alarms" : "on",
-    "AM_Window": [8,10],
-    "PM_Window": [4,6],
-    "Sat": {
-        "AM": {
-            "reminders" : 2,
-            "status" : 'NA'
-        },
-        "PM": {
-            "reminders" : 2,
-            "status" : 'NA'
-        }
-    },
-    "Sun": {
-        "AM": {
-            "reminders" : 2,
-            "status" : 'NA'
-        },
-        "PM": {
-            "reminders" : 2,
-            "status" : 'NA'
-        }
-    },
-    "Mon": {
-        "AM": {
-            "reminders" : 2,
-            "status" : 'NA'
-        },
-        "PM": {
-            "reminders" : 2,
-            "status" : 'NA'
-        }
-    },
-    "Tue": {
-        "AM": {
-            "reminders" : 2,
-            "status" : 'NA'
-        },
-        "PM": {
-            "reminders" : 2,
-            "status" : 'NA'
-        }
-    },
-    "Wed": {
-        "AM": {
-            "reminders" : 2,
-            "status" : 'NA'
-        },
-        "PM": {
-            "reminders" : 2,
-            "status" : 'NA'
-        }
-    },
-    "Thu": {
-        "AM": {
-            "reminders" : 2,
-            "status" : 'NA'
-        },
-        "PM": {
-            "reminders" : 2,
-            "status" : 'NA'
-        }
-    },
-    "Fri": {
-        "AM": {
-            "reminders" : 2,
-            "status" : 'NA'
-        },
-        "PM": {
-            "reminders" : 2,
-            "status" : 'NA'
-        }
-    }
-}
+
+def fetchSchedule():
+    with open("schedule.json", 'r') as f:
+        schedule = json.load(f)
+        return schedule
+
+def updateSchedule(schedule):
+    print("Update Schedule .................")
+    with open("schedule.json", 'w') as f:
+        json.dump(schedule, f, indent=4)
+    
 
 def getCurrDay():
-    t = datetime.datetime.now()
-    return t.strftime("%a")
+    with open("timeMock.json", "r") as f:
+        timeMock = json.load(f)
+        if timeMock['mode'] == 'test':
+            return timeMock['day']
+        else:
+            t = datetime.datetime.now()
+            return t.strftime("%a")
 
 def getCurrSlot():
-    t = datetime.datetime.now()
-    return t.strftime("%p")
+    with open("timeMock.json", "r") as f:
+        timeMock = json.load(f)
+        if timeMock['mode'] == 'test':
+            return timeMock['slot']
+        else:
+            t = datetime.datetime.now()
+            return t.strftime("%p")
 
 def getCurrHr():
-    t = datetime.datetime.now()
-    return t.strftime("%I")
+    with open("timeMock.json", "r") as f:
+        timeMock = json.load(f)
+        if timeMock['mode'] == 'test':
+            return timeMock['hr']
+        else:
+            t = datetime.datetime.now()
+            return t.strftime("%I")
 
-def getTime():
-    t = datetime.datetime.now()
-    return t.strftime("%a:%p:%I")
+# def getTime():
+#     t = datetime.datetime.now()
+#     return t.strftime("%a:%p:%I")
 
-def inWindow(hr):
+def inWindow(schedule, hr):
     #convert input to int
     if type(hr) == str:
         hr = int(hr)
@@ -133,7 +76,7 @@ def insertEvent(event, data):
         tempEvtList.append(evt)
 
 def findOpenEvent(day, slot):
-    for evt in evtList:
+    for evt in slotEvtList:
         if day == evt['day'] and slot == evt['slot']:
             packSlotDay = (evt['data'].split(',')[0]).split('-')[0]
             packSlot = (evt['data'].split(',')[0]).split('-')[1]
@@ -153,32 +96,35 @@ def medicineTakenAction(day, slot):
 def medicineMissedAction(day, slot):
     print("[TODO] Medicine is missed!!")
 
-def generateReminder(day, slot):
+def generateReminder(schedule, day, slot):
+    schedule[day][slot]['reminders'] = schedule[day][slot]['reminders'] - 1
+    print(" Remaining reminders after this one is [{0}]".format(schedule[day][slot]['reminders']))
     print("[TODO] generate Reminder")
 
 
-def updateSlotStatus(day, slot):
-    if schedule[day][slot]['status'] == 'NA':
+def updateSlotStatus(schedule, day, slot):
+    if schedule[day][slot]['status'] == '':
         # check for the openning event
         if findOpenEvent(day, slot):
             # Update the schedule entry that medicine is taken
             schedule[day][slot]['status'] = 'taken'
             medicineTakenAction(day,slot)
-            return 'ready'
+            return True
         else:
             # check on reminder left for this slot
             if schedule[day][slot]['reminders'] == 0:
                 schedule[day][slot]['status'] = 'missed'
                 medicineMissedAction(day,slot)
-                return 'ready'
+                return True
             else:
-                return 'reminder'
-    else:
-        return 'ready'
+                print('updateSlotStatus: generate reminder: {0}'.format(schedule[day][slot]['reminders']))
+                generateReminder(schedule, day, slot)
+                return True
 
-def eventCallback(event, data):
-    #print("smartbrain CB: evt:{0}, data:{1}".format(event, data))
-    insertEvent(event, data)
+    else:
+        #print('updateSlotStatus: schedule is ready with: {0}'.format(schedule[day][slot]['status']))
+        return False
+
 
     # if no medicine event generate a reminder
         # decrement the no of remaining reminders   -> reminder counter
@@ -195,13 +141,24 @@ def reminderThread():
         day = getCurrDay()
         slot = getCurrSlot()
         hr = getCurrHr()
+        print('current data: day[{0}], slot[{1}], hr[{2}]'.format(day,slot,hr))
+
+        # Get Schedule
+        bUpdateSchedule = False
+        schedule = fetchSchedule()
+
         # check schedule to see if there is a medicine slot
         if (day in schedule):
             # If time within slot time and there is a medicine slot
-            if  inWindow(hr) and (slot in schedule[day]):
-                status = UpdateSlotStatus(day, slot)
-                if status == 'reminder':
-                    generateReminder(day, slot)
+            if  inWindow(schedule, hr) and (slot in schedule[day]):
+                bUpdateSchedule = updateSlotStatus(schedule, day, slot)
+            else:
+                print('time is not within the window ({0})', inWindow(schedule, hr))
+
+
+        # Update Schdule
+        if bUpdateSchedule:
+            updateSchedule(schedule)
 
         time.sleep(10)
 
@@ -210,7 +167,7 @@ def reminderThread():
 
 def main():
     print("The main smartOrganizer brain")
-    dvcThreadObj = Thread(target=tagBle.catchSmartDevice, args=(eventCallback,))
+    dvcThreadObj = Thread(target=tagBle.catchSmartDevice, args=(insertEvent,))
     reminderThreadObj = Thread(target=reminderThread)
 
     dvcThreadObj.start()
