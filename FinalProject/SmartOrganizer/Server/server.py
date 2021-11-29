@@ -89,33 +89,38 @@ schedule = {
 app = Flask(__name__)
 
 def pushNotification(param):
-    if param == 'temp':
-        try:
+   
+    try:
+        if param == 'temp':
             response = requests.post('https://maker.ifttt.com/trigger/TempAlarm/with/key/d6oHDDX89YYY0X6Mg9hG0S')
-
             print(response)
+        elif param == 'missed':
+            response = requests.post('https://maker.ifttt.com/trigger/MissedDosage/with/key/d6oHDDX89YYY0X6Mg9hG0S')
+            print(response)
+        elif param == 'reminder':  
+            response = requests.post('https://maker.ifttt.com/trigger/MedReminder/with/key/d6oHDDX89YYY0X6Mg9hG0S')
+            print(response)          
 
-        except requests.exceptions.HTTPError as errh:
-            print(errh)
-        except requests.exceptions.ConnectionError as errc:
-            print(errc)
-        except requests.exceptions.Timeout as errt:
-            print(errt)
-        except requests.exceptions.RequestException as err:
-            print(err)
+    except requests.exceptions.HTTPError as errh:
+        print(errh)
+    except requests.exceptions.ConnectionError as errc:
+        print(errc)
+    except requests.exceptions.Timeout as errt:
+        print(errt)
+    except requests.exceptions.RequestException as err:
+        print(err)
 
 @app.route('/schedule',methods=['GET'])
 def getSchedule():
     return jsonify(schedule)
 
 
-@app.route('/tempAlarm', methods=['POST'])
-def tempAlarm():
+@app.route('/Alarm', methods=['POST'])
+def Alarm():
     if request.headers['Content-Type'] == 'application/json':
-        data = json.dumps(request.json)
-        print("received data: {0}".format(data))
+        print("received data: {0}, data type: {1}".format(request.json, type(request.json)))
         # Push notification to IFTTT
-        pushNotification("temp")
+        pushNotification(request.json['evt'])
         return jsonify({"reply": "got Alarm Message"})
 
 if __name__ == "__main__":
