@@ -5,6 +5,7 @@ import json
 import sys
 import signal
 from threading import Thread, Event, Lock
+import serverLink as srv
 
 
 slotEvtList = []
@@ -79,7 +80,7 @@ def insertEvent(event, data):
 
 def findOpenEvent(day, slot):
     for evt in slotEvtList:
-        if day == evt['day'] and slot == evt['slot']:
+        if day.capitalize() == evt['day'].capitalize() and slot == evt['slot']:
             packSlotDay = (evt['data'].split(',')[0]).split('-')[0]
             packSlot = (evt['data'].split(',')[0]).split('-')[1]
             evtType = evt['data'].split(',')[1]
@@ -94,14 +95,17 @@ def findOpenEvent(day, slot):
 
 def medicineTakenAction(day, slot):
     print("[TODO] Medicine is taken")
+    srv.pushMedTaken()
 
 def medicineMissedAction(day, slot):
-    print("[TODO] Medicine is missed!!")
+    print("Medicine is missed!!")
+    srv.pushMissingDosage()
 
 def generateReminder(schedule, day, slot):
     schedule[day][slot]['reminders'] = schedule[day][slot]['reminders'] - 1
     print(" Remaining reminders after this one is [{0}]".format(schedule[day][slot]['reminders']))
     print("[TODO] generate Reminder")
+    srv.pushReminder()
 
 
 def updateSlotStatus(schedule, day, slot):
@@ -127,15 +131,16 @@ def updateSlotStatus(schedule, day, slot):
         #print('updateSlotStatus: schedule is ready with: {0}'.format(schedule[day][slot]['status']))
         return False
 
-def generateTempAlarm():
-    print('[TODO] Generate Temp Alarm')   
+def generateTempAlarm(temp):
+    print('[TODO] Generate Temp Alarm')
+    srv.pushTempAlarm(temp)
 
 def checkTemp(schedule):
     if schedule['tempAlarm'] == "":
         for tempEvt in tempEvtList:
-            if tempEvt['data'] > schedule['tempThreshold']:
+            if int(tempEvt['data']) > schedule['tempThreshold']:
                 schedule['tempAlarm'] = 'high'
-                generateTempAlarm()
+                generateTempAlarm(int(tempEvt['data']))
                 return True
 
 def reminderThread():
@@ -162,7 +167,8 @@ def reminderThread():
 
             
             # Check on Temp Alarms
-            bUpdateSchedule = checkTemp(schedule)
+            if checkTemp(schedule):
+                updateSchedule(schedule)
 
             # Update Schdule
             if bUpdateSchedule:
@@ -170,7 +176,7 @@ def reminderThread():
 
             time.sleep(10)
     finally:
-        print('GoodBye !!!')
+        print('Finally reminderThread!')
 
 
 def main():
@@ -181,10 +187,11 @@ def main():
         reminderThreadObj = Thread(target=reminderThread)
 
         dvcThreadObj.start()
+        time.sleep(30)
         reminderThreadObj.start()
     
     finally:
-        print('GoodBye !!!')
+        print('Finally main!')
 
 if __name__ == "__main__":
     main()

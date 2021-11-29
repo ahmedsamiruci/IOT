@@ -95,11 +95,14 @@ def pushNotification(param):
             response = requests.post('https://maker.ifttt.com/trigger/TempAlarm/with/key/d6oHDDX89YYY0X6Mg9hG0S')
             print(response)
         elif param == 'missed':
-            response = requests.post('https://maker.ifttt.com/trigger/MissedDosage/with/key/d6oHDDX89YYY0X6Mg9hG0S')
+            response = requests.post('https://maker.ifttt.com/trigger/MissDosage/with/key/d6oHDDX89YYY0X6Mg9hG0S')
             print(response)
         elif param == 'reminder':  
             response = requests.post('https://maker.ifttt.com/trigger/MedReminder/with/key/d6oHDDX89YYY0X6Mg9hG0S')
             print(response)          
+        elif param == 'taken':  
+            response = requests.post('https://maker.ifttt.com/trigger/MedTaken/with/key/d6oHDDX89YYY0X6Mg9hG0S')
+            print(response)    
 
     except requests.exceptions.HTTPError as errh:
         print(errh)
@@ -124,4 +127,4 @@ def Alarm():
         return jsonify({"reply": "got Alarm Message"})
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")

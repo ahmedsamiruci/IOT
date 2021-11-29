@@ -1,7 +1,7 @@
 import requests
 import sys
 
-serverUrl = "http://127.0.0.1:5000"
+serverUrl = 'http://192.168.9.232:5000/'
 
 def getSchedule():
     try:
@@ -48,6 +48,20 @@ def pushReminder():
 def pushMissingDosage():
     try:
         response = requests.post(serverUrl+'/Alarm', json={'evt':'missed'})
+        print(response.json())
+        
+    except requests.exceptions.HTTPError as errh:
+        print(errh)
+    except requests.exceptions.ConnectionError as errc:
+        print(errc)
+    except requests.exceptions.Timeout as errt:
+        print(errt)
+    except requests.exceptions.RequestException as err:
+        print(err)
+
+def pushMedTaken():
+    try:
+        response = requests.post(serverUrl+'/Alarm', json={'evt':'taken'})
         print(response.json())
         
     except requests.exceptions.HTTPError as errh:
