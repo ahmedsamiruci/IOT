@@ -69,21 +69,24 @@ def insertEvent(event, data):
     global slotEvtList
     global tempEvtList
     
-    evt = {"day": getCurrDay(), "slot": getCurrSlot(), "Hr":getCurrHr(), "data": data}
+    evt = {"day": getCurrDay(), "slot": getCurrSlot(), "Hr":getCurrHr(), "slotEvt": data}
     if event == 'slot':    
-        print('Slot event: day[{0}], slot[{1}], hr[{2}], data[{3}]'.format(evt['day'],evt['slot'],evt['Hr'],evt['data']))
+        print('Slot event: day[{0}], slot[{1}], hr[{2}], data[{3}]'.format(evt['day'],evt['slot'],evt['Hr'],evt['slotEvt']))
         slotEvtList.append(evt)
-
     else:
-        print('Temp event: day[{0}], slot[{1}], hr[{2}], data[{3}]'.format(evt['day'],evt['slot'],evt['Hr'],evt['data']))
+        evt['temp'] = evt.pop('slotEvt')
+        print('Temp event: day[{0}], slot[{1}], hr[{2}], data[{3}]'.format(evt['day'],evt['slot'],evt['Hr'],evt['temp']))
         tempEvtList.append(evt)
+
+    #push the event to the server
+    srv.sendEventData(evt)
 
 def findOpenEvent(day, slot):
     for evt in slotEvtList:
         if day.capitalize() == evt['day'].capitalize() and slot == evt['slot']:
-            packSlotDay = (evt['data'].split(',')[0]).split('-')[0]
-            packSlot = (evt['data'].split(',')[0]).split('-')[1]
-            evtType = evt['data'].split(',')[1]
+            packSlotDay = (evt['slotEvt'].split(',')[0]).split('-')[0]
+            packSlot = (evt['slotEvt'].split(',')[0]).split('-')[1]
+            evtType = evt['slotEvt'].split(',')[1]
             print("find matching event, pack evt info: slotDay[{0}], slot[{1}], evt[{2}]".format(packSlotDay, packSlot, evtType))
             
             if (evtType == 'OPEN') and (packSlot == slot) and (day.capitalize() == packSlotDay.capitalize()):
@@ -138,9 +141,9 @@ def generateTempAlarm(temp):
 def checkTemp(schedule):
     if schedule['tempAlarm'] == "":
         for tempEvt in tempEvtList:
-            if int(tempEvt['data']) > schedule['tempThreshold']:
+            if int(tempEvt['temp']) > schedule['tempThreshold']:
                 schedule['tempAlarm'] = 'high'
-                generateTempAlarm(int(tempEvt['data']))
+                generateTempAlarm(int(tempEvt['temp']))
                 return True
 
 def reminderThread():

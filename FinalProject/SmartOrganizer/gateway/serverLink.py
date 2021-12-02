@@ -1,7 +1,8 @@
 import requests
 import sys
 
-serverUrl = 'http://192.168.9.232:5000/'
+serverUrl = 'http://192.168.86.156:5000/'
+
 
 def getSchedule():
     try:
@@ -72,6 +73,22 @@ def pushMedTaken():
         print(errt)
     except requests.exceptions.RequestException as err:
         print(err)
+
+def sendEventData(evtData):
+    try:
+        print("Send Event Data to Server: {0}, dataType:{1}".format(evtData, type(evtData)) )
+        response = requests.post(serverUrl+'/Events', json=evtData)
+        print('print server response')
+        print(response.json())
+        
+    except requests.exceptions.HTTPError as errh:
+        print(errh)
+    except requests.exceptions.ConnectionError as errc:
+        print(errc)
+    except requests.exceptions.Timeout as errt:
+        print(errt)
+    except requests.exceptions.RequestException as err:
+        print(err)   
 
 def main():
     print("Welcome ServerLink!!")
