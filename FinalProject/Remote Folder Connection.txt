@@ -1,7 +1,7 @@
 Remote Folder Connection
 
 // Mount Command
-sshfs pi@192.168.86.25:/home/pi/assignments /Users/ahmedsamir/Documents/piRemoteFolder
+sshfs pi@192.168.86.25:/home/pi/assignments /Users/ahmedsamir/Documents/piRemoteFolder -o reconnect
 
 // Reconnect command
 sshfs -o reconnect pi@192.168.86.25:/home/pi/assignments
@@ -12,8 +12,30 @@ umount /Users/ahmedsamir/Documents/piRemoteFolder
 // unmount busy folder
 umount -f /Users/ahmedsamir/Documents/piRemoteFolder
 
+// Check mounted folders
+ df -h
+
 // get process id in case of hang
 ps aux | grep pi@192.168.86.25
 
 // kill the process
 kill -9 <pid of locked sshfs process>
+
+
+
+sshfs pi@192.168.9.234:/home/pi/assignments /Users/ahmedsamir/Documents/piRemoteFolder -o reconnect
+
+
+Pi Commands
+
+// turn off auto time setting
+sudo timedatectl set-ntp false
+
+// change the time setting
+sudo date -s '13:04:00'
+
+//change the date and time 
+sudo date -s '2021-01-04 13:04:00'
+
+// get the current date and time
+date

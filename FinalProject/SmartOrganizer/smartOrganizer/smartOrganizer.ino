@@ -41,9 +41,10 @@ class bleDeviceCallbacks : public DeviceInfoCallbacks{
 
 
 class sensingObjectCallbacks : public sensingCallbacks {
-  void onTempEvt(int8_t temp, enu_tempEvt tempEvt) {
-    Serial.printf("onTempEvt, Evt Type = %d, temp = %d\n", tempEvt, temp);
-    String msg = "temp:" + temp;
+  void onTempEvt(float temp, enu_tempEvt tempEvt) {
+    Serial.printf("onTempEvt, Evt Type = %d, temp = %.2f\n", tempEvt, temp);
+    String msg = "temp:" + String(temp);
+    //Serial.println(msg);
     m_bleDevice.notifyEvt(msg.c_str());
   }
   void onSlotEvt(String slotName, String slotEvt) {

@@ -40,7 +40,7 @@ class sensingCallbacks{
   public:
   virtual ~sensingCallbacks();
   
-  virtual void onTempEvt(int8_t temp, enu_tempEvt tempEvt);
+  virtual void onTempEvt(float temp, enu_tempEvt tempEvt);
   virtual void onSlotEvt(String slotName, String slotEvt);
 };
 

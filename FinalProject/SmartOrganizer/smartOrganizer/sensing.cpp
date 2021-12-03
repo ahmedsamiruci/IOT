@@ -6,17 +6,17 @@
 #include <Adafruit_BMP280.h>
 
 #define HW_TIMER_INTERVAL_US      10000L
-#define TEMP_FREQ_SEC (10)
+#define TEMP_FREQ_SEC (30)
 #define DEBOUNCE_TIME_MS (50)
 
 const int BUTTON_NUM = 14;
 
 const int sat_AM_pin = 36;
 const int sat_PM_pin = 39;
-const int sun_AM_pin = 4;
-const int sun_PM_pin = 16;
-const int mon_AM_pin = 2;
-const int mon_PM_pin = 15;
+const int sun_AM_pin = 2;
+const int sun_PM_pin = 15;
+const int mon_AM_pin = 16;
+const int mon_PM_pin = 4;
 const int tue_AM_pin = 27;
 const int tue_PM_pin = 14;
 const int wed_AM_pin = 25;
@@ -203,12 +203,8 @@ uint8_t sensing::getTempThreshold() {
   return m_tempThreshold;
 }
 
-static int8_t readTemp(void) {
+static float readTemp(void) {
   return bmp.readTemperature();
-}
-
-int8_t sensing::getTemp(void) {
-  return readTemp();
 }
 
 void sensing::setTempCheckFreq(uint8_t seconds) {
@@ -221,10 +217,11 @@ uint8_t sensing::getTempCheckFreq() {
 }
 
 
-void checkTemp(uint8_t temp) {
+void checkTemp(float temp) {
   //Serial.printf("Cur Temp = %d, Threshold = %d\n", temp, sensing::getTempThreshold());
   // Check Temp Threshold
-  if (temp >= sensing::getTempThreshold()) {
+  //if (temp >= sensing::getTempThreshold()) 
+  {
     // Generate alarm event
     sensing::m_psensingCallbacks->onTempEvt(temp, TEMP_EVT_ALARM);
   }
@@ -263,7 +260,7 @@ sensingCallbacks::~sensingCallbacks() {
 
 }
 
-void sensingCallbacks::onTempEvt(int8_t temp, enu_tempEvt tempEvt) {
+void sensingCallbacks::onTempEvt(float temp, enu_tempEvt tempEvt) {
 
 }
 
