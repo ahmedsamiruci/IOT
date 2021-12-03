@@ -11,7 +11,7 @@ import hwControls as hw
 
 slotEvtList = []
 tempEvtList = []
-
+bUpdateStatus = False
 
 def fetchSchedule():
     with open("schedule.json", 'r') as f:
@@ -51,16 +51,23 @@ def getCurrHr():
             t = datetime.datetime.now()
             return t.strftime("%I")
 
-# def getTime():
-#     t = datetime.datetime.now()
-#     return t.strftime("%a:%p:%I")
+def getCurrTime():
+    with open("timeMock.json", "r") as f:
+        timeMock = json.load(f)
+        if timeMock['mode'] == 'test':
+            return timeMock['hr']+':00:00'
+        else:
+            t = datetime.datetime.now()
+            return t.strftime("%H:%M:%S")
+
 
 def inWindow(schedule, hr):
     #convert input to int
     if type(hr) == str:
         hr = int(hr)
-        
-    if (hr in range(schedule["AM_Window"][0], schedule["AM_Window"][1] + 1 )) or (hr in range(schedule["PM_Window"][0], schedule["PM_Window"][1] + 1)):
+    
+    # the window margin is 1 hr before the slot start time and 1 hour after the slot end time
+    if (hr in range(schedule["AM_Window"][0] - 1 , schedule["AM_Window"][1] + 2 )) or (hr in range(schedule["PM_Window"][0] - 1, schedule["PM_Window"][1] + 2)):
         return True
     else:
         return False
@@ -69,6 +76,7 @@ def inWindow(schedule, hr):
 def insertEvent(event, data):
     global slotEvtList
     global tempEvtList
+    global bUpdateStatus
     
     evt = {"day": getCurrDay(), "slot": getCurrSlot(), "Hr":getCurrHr(), "slotEvt": data}
     if event == 'slot':    
@@ -82,9 +90,12 @@ def insertEvent(event, data):
     #push the event to the server
     srv.sendEventData(evt)
 
+    bUpdateStatus = True
+
 def findOpenEvent(day, slot):
     for evt in slotEvtList:
         if day.capitalize() == evt['day'].capitalize() and slot == evt['slot']:
+            # parse the slotEvt data-> SAT-PM,OPEN
             packSlotDay = (evt['slotEvt'].split(',')[0]).split('-')[0]
             packSlot = (evt['slotEvt'].split(',')[0]).split('-')[1]
             evtType = evt['slotEvt'].split(',')[1]
@@ -93,7 +104,7 @@ def findOpenEvent(day, slot):
             if (evtType == 'OPEN') and (packSlot == slot) and (day.capitalize() == packSlotDay.capitalize()):
                 return True
             else:
-                print('Not matching evt!')
+                print('No matching evt!')
     
     return False
 
@@ -129,11 +140,6 @@ def updateSlotStatus(schedule, day, slot):
                 schedule[day][slot]['status'] = 'missed'
                 medicineMissedAction(day,slot)
                 return True
-            else:
-                print('updateSlotStatus: generate reminder: {0}'.format(schedule[day][slot]['reminders']))
-                generateReminder(schedule, day, slot)
-                return True
-
     else:
         #print('updateSlotStatus: schedule is ready with: {0}'.format(schedule[day][slot]['status']))
         return False
@@ -152,38 +158,62 @@ def checkTemp(schedule):
                 generateTempAlarm(int(tempEvt['temp']))
                 return True
 
-def reminderThread():
+def updateStatus():
+    # Get current time
+    day = getCurrDay()
+    slot = getCurrSlot()
+    hr = getCurrHr()
+    print('current data: day[{0}], slot[{1}], hr[{2}]'.format(day,slot,hr))
+    # Get Schedule
+    bUpdateSchedule = False
+    schedule = fetchSchedule()
+    # check schedule to see if there is a medicine slot
+    if (day in schedule):
+        # If time within slot time and there is a medicine slot
+        if  inWindow(schedule, hr) and (slot in schedule[day]):
+            bUpdateSchedule = updateSlotStatus(schedule, day, slot)
+        else:
+            print('No Medicine at this time')
+    
+    # Check on Temp Alarms
+    if checkTemp(schedule):
+        updateSchedule(schedule)
+    # Update Schdule
+    if bUpdateSchedule:
+        updateSchedule(schedule)
 
+
+def CheckReminders():
+
+    moment = getCurrTime()
+    if moment.split(':')[1] == '00' and moment.split(':')[2] == '00':
+        print("It is the 00:00 moment to check reminders!!!")
+        day = getCurrDay()
+        slot = getCurrSlot()
+        hr = getCurrHr()
+
+   
+        schedule = fetchSchedule()
+        if (day in schedule) and inWindow(schedule, hr) and (slot in schedule[day]):
+            if findOpenEvent(day, slot):
+                print("the medicine slot is already opened, don't generate reminder")
+            elif schedule[day][slot]['status'] == '' and schedule[day][slot]['reminders'] > 0:
+                print('updateSlotStatus: generate reminder: {0}'.format(schedule[day][slot]['reminders']))
+                generateReminder(schedule, day, slot)
+                updateSchedule(schedule)
+
+def reminderThread():
+    global bUpdateStatus
     try:
         while True:
-            # Get current time
-            day = getCurrDay()
-            slot = getCurrSlot()
-            hr = getCurrHr()
-            print('current data: day[{0}], slot[{1}], hr[{2}]'.format(day,slot,hr))
-
-            # Get Schedule
-            bUpdateSchedule = False
-            schedule = fetchSchedule()
-
-            # check schedule to see if there is a medicine slot
-            if (day in schedule):
-                # If time within slot time and there is a medicine slot
-                if  inWindow(schedule, hr) and (slot in schedule[day]):
-                    bUpdateSchedule = updateSlotStatus(schedule, day, slot)
-                else:
-                    print('No Medicine at this time')
-
             
-            # Check on Temp Alarms
-            if checkTemp(schedule):
-                updateSchedule(schedule)
+            if bUpdateStatus:
+                bUpdateStatus = False
+                updateStatus()
 
-            # Update Schdule
-            if bUpdateSchedule:
-                updateSchedule(schedule)
+            CheckReminders() 
 
-            time.sleep(10)
+            time.sleep(1)
     finally:
         print('Finally reminderThread!')
 
