@@ -37,8 +37,7 @@ def scanSmartDvc():
         for (adtype, desc, value) in dev.getScanData():
             if value == "SmartOrganizer":
                 print ("{0} = {1}".format(desc, value))
-                return dev
-    
+                return dev   
     return None
 
 
