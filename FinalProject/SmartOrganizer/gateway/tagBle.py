@@ -1,5 +1,5 @@
 from bluepy.btle import Scanner, DefaultDelegate, UUID, Peripheral, BTLEDisconnectError
-
+import hwControls as hw
 
 statusChar = None
 evtChar = None
@@ -30,6 +30,7 @@ class NotifyDelegate(DefaultDelegate):
 
 def scanSmartDvc():
     print("Search for SmartOrganizer device...")
+    hw.setLedStatus('blue', 'slow2')
     scanner = Scanner() #.withDelegate(ScanDelegate())
     devices = scanner.scan(5.0)
 
@@ -85,6 +86,7 @@ def catchSmartDevice(_evtCb=None):
         print("catchSmartDevice: set DeafultCb")
         evtCb = defaultEvtCallback
     
+    hw.init()
     smartOrganizer = scanSmartDvc()
     if smartOrganizer != None:
         print("Found the smartOrganizer")
@@ -92,7 +94,7 @@ def catchSmartDevice(_evtCb=None):
         try:
             connectedDvc = None
             connectedDvc = connectSmartDvc(smartOrganizer)
-
+            hw.setLedStatus('blue', 'on')
             while True:
                 connectedDvc.waitForNotifications(5)
 
@@ -106,6 +108,7 @@ def catchSmartDevice(_evtCb=None):
                     connectedDvc.disconnect()
     else:
         print("Couldn't find SmartOrganizer!")
+        hw.setLedStatus('blue', 'off')
 
 
 

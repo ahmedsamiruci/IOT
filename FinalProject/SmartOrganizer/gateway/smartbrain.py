@@ -6,6 +6,7 @@ import sys
 import signal
 from threading import Thread, Event, Lock
 import serverLink as srv
+import hwControls as hw
 
 
 slotEvtList = []
@@ -97,7 +98,8 @@ def findOpenEvent(day, slot):
     return False
 
 def medicineTakenAction(day, slot):
-    print("[TODO] Medicine is taken")
+    print("Medicine is taken")
+    hw.setLedStatus('green', 'slow2', 5)
     srv.pushMedTaken()
 
 def medicineMissedAction(day, slot):
@@ -107,7 +109,9 @@ def medicineMissedAction(day, slot):
 def generateReminder(schedule, day, slot):
     schedule[day][slot]['reminders'] = schedule[day][slot]['reminders'] - 1
     print(" Remaining reminders after this one is [{0}]".format(schedule[day][slot]['reminders']))
-    print("[TODO] generate Reminder")
+    print("Generate Reminder")
+    hw.setLedStatus('red', 'slow2', 6)
+    hw.soundBuzzer(3, 1) 
     srv.pushReminder()
 
 
@@ -135,7 +139,9 @@ def updateSlotStatus(schedule, day, slot):
         return False
 
 def generateTempAlarm(temp):
-    print('[TODO] Generate Temp Alarm')
+    print('Generate Temp Alarm')
+    hw.setLedStatus('red', 'slow2')
+    hw.soundBuzzer(5, 0.2)
     srv.pushTempAlarm(temp)
 
 def checkTemp(schedule):
@@ -188,6 +194,8 @@ def main():
     try:
         dvcThreadObj = Thread(target=tagBle.catchSmartDevice, args=(insertEvent,))
         reminderThreadObj = Thread(target=reminderThread)
+
+        hw.init()
 
         dvcThreadObj.start()
         time.sleep(30)
