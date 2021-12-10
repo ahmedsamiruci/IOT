@@ -91,7 +91,7 @@ schedule = {
 app = Flask(__name__)
 
 def pushNotification(param):
-   
+    print('sending {0} event push notification to the user phone ...'.format(param))
     try:
         if param == 'temp':
             response = requests.post('https://maker.ifttt.com/trigger/TempAlarm/with/key/d6oHDDX89YYY0X6Mg9hG0S')
@@ -123,7 +123,8 @@ def getSchedule():
 @app.route('/Alarm', methods=['POST'])
 def Alarm():
     if request.headers['Content-Type'] == 'application/json':
-        print("received data: {0}, data type: {1}".format(request.json, type(request.json)))
+        #print("received data: {0}, data type: {1}".format(request.json, type(request.json)))
+        print('received Alarm event from gateway.')
         # Push notification to IFTTT
         pushNotification(request.json['evt'])
         return jsonify({"reply": "got Alarm Message"})
@@ -131,8 +132,9 @@ def Alarm():
 @app.route('/Events', methods=['POST'])
 def rxEventData():
     if request.headers['Content-Type'] == 'application/json':
-        print("received data: {0}, data type: {1}".format(request.json, type(request.json)))
-        #save event data in the report
+        #print("received data: {0}, data type: {1}".format(request.json, type(request.json)))
+        print('Received new event from gateway .. inserting event into report')
+        # save event data in the report
         with open("userReport.json", 'a') as report:
             t = datetime.datetime.now()
             eventData = {'timestamp': t.strftime("%m/%d/%Y, %H:%M:%S")}

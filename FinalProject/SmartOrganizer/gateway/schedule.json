@@ -1,7 +1,7 @@
 {
     "reminderTimeout": 30,
-    "tempAlarm": "",
-    "tempThreshold": 25,
+    "tempAlarm": "high",
+    "tempThreshold": 24,
     "AM_Window": [
         8,
         10
@@ -32,22 +32,22 @@
     },
     "Mon": {
         "AM": {
-            "reminders": 2,
-            "status": ""
+            "reminders": 0,
+            "status": "missed"
         },
         "PM": {
-            "reminders": 2,
-            "status": ""
+            "reminders": 1,
+            "status": "taken"
         }
     },
     "Tue": {
         "AM": {
-            "reminders": 2,
-            "status": ""
+            "reminders": 1,
+            "status": "taken"
         },
         "PM": {
-            "reminders": 2,
-            "status": ""
+            "reminders": 1,
+            "status": "taken"
         }
     },
     "Wed": {

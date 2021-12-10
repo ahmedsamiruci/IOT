@@ -19,7 +19,7 @@ def fetchSchedule():
         return schedule
 
 def updateSchedule(schedule):
-    print("Update Schedule .................")
+    #print("Update Schedule .................")
     with open("schedule.json", 'w') as f:
         json.dump(schedule, f, indent=4)
     
@@ -80,11 +80,11 @@ def insertEvent(event, data):
     
     evt = {"day": getCurrDay(), "slot": getCurrSlot(), "Hr":getCurrHr(), "slotEvt": data}
     if event == 'slot':    
-        print('Slot event: day[{0}], slot[{1}], hr[{2}], data[{3}]'.format(evt['day'],evt['slot'],evt['Hr'],evt['slotEvt']))
+        print('Slot event: [{0}]'.format(evt['slotEvt']))
         slotEvtList.append(evt)
     else:
         evt['temp'] = evt.pop('slotEvt')
-        print('Temp event: day[{0}], slot[{1}], hr[{2}], data[{3}]'.format(evt['day'],evt['slot'],evt['Hr'],evt['temp']))
+        print('Temp event: temp = [{0}]'.format(evt['temp']))
         tempEvtList.append(evt)
 
     #push the event to the server
@@ -99,17 +99,17 @@ def findOpenEvent(day, slot):
             packSlotDay = (evt['slotEvt'].split(',')[0]).split('-')[0]
             packSlot = (evt['slotEvt'].split(',')[0]).split('-')[1]
             evtType = evt['slotEvt'].split(',')[1]
-            print("find matching event, pack evt info: slotDay[{0}], slot[{1}], evt[{2}]".format(packSlotDay, packSlot, evtType))
+            #print("Found a matching event, pack evt info: slotDay[{0}], slot[{1}], evt[{2}]".format(packSlotDay, packSlot, evtType))
             
             if (evtType == 'OPEN') and (packSlot == slot) and (day.capitalize() == packSlotDay.capitalize()):
                 return True
-            else:
-                print('No matching evt!')
+            #else:
+            #    print('No matching evt!')
     
     return False
 
 def medicineTakenAction(day, slot):
-    print("Medicine is taken")
+    print("Medicine is taken on time")
     hw.setLedStatus('green', 'slow2', 5)
     srv.pushMedTaken()
 
@@ -119,8 +119,8 @@ def medicineMissedAction(day, slot):
 
 def generateReminder(schedule, day, slot):
     schedule[day][slot]['reminders'] = schedule[day][slot]['reminders'] - 1
-    print(" Remaining reminders after this one is [{0}]".format(schedule[day][slot]['reminders']))
-    print("Generate Reminder")
+    #print(" Remaining reminders after this one is [{0}]".format(schedule[day][slot]['reminders']))
+    print("Generate Reminder ...")
     hw.setLedStatus('red', 'slow2', 6)
     hw.soundBuzzer(3, 1) 
     srv.pushReminder()
@@ -145,17 +145,19 @@ def updateSlotStatus(schedule, day, slot):
         return False
 
 def generateTempAlarm(temp):
-    print('Generate Temp Alarm')
+    print('Temp exceeded threshold ... Generate Temp Alarm!!!')
     hw.setLedStatus('red', 'slow2')
     hw.soundBuzzer(5, 0.2)
+
     srv.pushTempAlarm(temp)
 
 def checkTemp(schedule):
     if schedule['tempAlarm'] == "":
         for tempEvt in tempEvtList:
-            if int(tempEvt['temp']) > schedule['tempThreshold']:
+            if float(tempEvt['temp']) > schedule['tempThreshold']:
                 schedule['tempAlarm'] = 'high'
-                generateTempAlarm(int(tempEvt['temp']))
+                generateTempAlarm(float(tempEvt['temp']))
+                tempEvtList.clear()
                 return True
 
 def updateStatus():
@@ -163,7 +165,7 @@ def updateStatus():
     day = getCurrDay()
     slot = getCurrSlot()
     hr = getCurrHr()
-    print('current data: day[{0}], slot[{1}], hr[{2}]'.format(day,slot,hr))
+    #print('current data: day[{0}], slot[{1}], hr[{2}]'.format(day,slot,hr))
     # Get Schedule
     bUpdateSchedule = False
     schedule = fetchSchedule()
@@ -187,7 +189,7 @@ def CheckReminders():
 
     moment = getCurrTime()
     if moment.split(':')[1] == '00' and moment.split(':')[2] == '00':
-        print("It is the 00:00 moment to check reminders!!!")
+        print("Medicine window, check reminders and taken events.")
         day = getCurrDay()
         slot = getCurrSlot()
         hr = getCurrHr()
@@ -198,7 +200,7 @@ def CheckReminders():
             if findOpenEvent(day, slot):
                 print("the medicine slot is already opened, don't generate reminder")
             elif schedule[day][slot]['status'] == '' and schedule[day][slot]['reminders'] > 0:
-                print('updateSlotStatus: generate reminder: {0}'.format(schedule[day][slot]['reminders']))
+                #print('updateSlotStatus: generate reminder: {0}'.format(schedule[day][slot]['reminders']))
                 generateReminder(schedule, day, slot)
                 updateSchedule(schedule)
 
@@ -219,7 +221,7 @@ def reminderThread():
 
 
 def main():
-    print("The main smartOrganizer brain")
+    print("The smartOrganizer Gateway is running ... ")
 
     try:
         dvcThreadObj = Thread(target=tagBle.catchSmartDevice, args=(insertEvent,))
@@ -232,7 +234,7 @@ def main():
         reminderThreadObj.start()
     
     finally:
-        print('Finally main!')
+        print('')
 
 if __name__ == "__main__":
     main()

@@ -23,8 +23,8 @@ class NotifyDelegate(DefaultDelegate):
         DefaultDelegate.__init__(self)       
 
     def handleNotification(self, cHandle, data):
-        print("Got notification from handle {0}".format(cHandle))
-        print('Notification Data:{0}'.format(data))
+        #print("Got notification from handle {0}".format(cHandle))
+        #print('Notification Data:{0}'.format(data))
         rxData = data.decode("utf-8").split(':')
         evtCb(rxData[0], rxData[1])
 
@@ -61,7 +61,7 @@ def connectSmartDvc(scanDvc):
     smartDvc = Peripheral(scanDvc)
     smartDvc.setDelegate(NotifyDelegate())
     #print("Reading Chars...")
-    printDvcChar(smartDvc)
+    #printDvcChar(smartDvc)
     statusChar = smartDvc.getCharacteristics(uuid=STATUS_CHAR_UUID)[0]
     evtChar = smartDvc.getCharacteristics(uuid=EVT_CHAR_UUID)[0]
     evtNotifyHandle = evtChar.getHandle() + 1
@@ -80,20 +80,21 @@ def connectSmartDvc(scanDvc):
 def catchSmartDevice(_evtCb=None):
     global evtCb
     if _evtCb != None:
-        print("catchSmartDevice: Set Callback Function")
+        #print("catchSmartDevice: Set Callback Function")
         evtCb = _evtCb
     else:
-        print("catchSmartDevice: set DeafultCb")
+       # print("catchSmartDevice: set DeafultCb")
         evtCb = defaultEvtCallback
     
     hw.init()
     smartOrganizer = scanSmartDvc()
     if smartOrganizer != None:
-        print("Found the smartOrganizer")
+        print("Found a smartOrganizer device")
         
         try:
             connectedDvc = None
             connectedDvc = connectSmartDvc(smartOrganizer)
+            print("Connected to SmartOrganizer device")
             hw.setLedStatus('blue', 'on')
             while True:
                 connectedDvc.waitForNotifications(5)

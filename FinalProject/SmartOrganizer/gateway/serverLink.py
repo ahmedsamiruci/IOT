@@ -1,13 +1,14 @@
 import requests
 import sys
 
-serverUrl = 'http://192.168.86.156:5000/'
+#serverUrl = 'http://192.168.86.156:5000/'
+serverUrl = 'http://192.168.0.74:5000/'
 
 
 def getSchedule():
     try:
         response = requests.get(serverUrl+'/schedule')
-        print(response.json())
+        #print(response.json())
     
     except requests.exceptions.HTTPError as errh:
         print(errh)
@@ -21,7 +22,7 @@ def getSchedule():
 def pushTempAlarm(temp):
     try:
         response = requests.post(serverUrl+'/Alarm', json={'evt':'temp', 'temp':temp})
-        print(response.json())
+        #print(response.json())
         
     except requests.exceptions.HTTPError as errh:
         print(errh)
@@ -35,7 +36,7 @@ def pushTempAlarm(temp):
 def pushReminder():
     try:
         response = requests.post(serverUrl+'/Alarm', json={'evt':'reminder'})
-        print(response.json())
+        #print(response.json())
         
     except requests.exceptions.HTTPError as errh:
         print(errh)
@@ -49,7 +50,7 @@ def pushReminder():
 def pushMissingDosage():
     try:
         response = requests.post(serverUrl+'/Alarm', json={'evt':'missed'})
-        print(response.json())
+        #print(response.json())
         
     except requests.exceptions.HTTPError as errh:
         print(errh)
@@ -63,7 +64,7 @@ def pushMissingDosage():
 def pushMedTaken():
     try:
         response = requests.post(serverUrl+'/Alarm', json={'evt':'taken'})
-        print(response.json())
+        #print(response.json())
         
     except requests.exceptions.HTTPError as errh:
         print(errh)
@@ -76,10 +77,10 @@ def pushMedTaken():
 
 def sendEventData(evtData):
     try:
-        print("Send Event Data to Server: {0}, dataType:{1}".format(evtData, type(evtData)) )
+        #print("Send Event Data to Server: {0}, dataType:{1}".format(evtData, type(evtData)) )
         response = requests.post(serverUrl+'/Events', json=evtData)
-        print('print server response')
-        print(response.json())
+        #print('print server response')
+        #print(response.json())
         
     except requests.exceptions.HTTPError as errh:
         print(errh)
